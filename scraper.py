@@ -29,9 +29,9 @@ for item in soup.find_all('lastmod'):
 index = dict(zip(mod, url))
 
 db.hmset('sitemap', index)
-print('--- ↓ db.sitemap ↓ ---')
-print(db.hgetall('sitemap'))
-print('--- ↑ db.sitemap ↑ ---')
+# print('--- ↓ db.sitemap ↓ ---')
+# print(db.hgetall('sitemap'))
+# print('--- ↑ db.sitemap ↑ ---')
 
 #-- fetch all pages and save them in the db
 
@@ -48,16 +48,38 @@ with requests.Session() as s:
   for mod, url in index.items():
     #-- if lastmod is newer than prev lastmod
     article = s.get(url)
-    soup = BeautifulSoup(article.text, 'html.parser')
+    soup = BeautifulSoup(article.text, 'lxml')
 
     #-- extract infos and make dict
-    article = soup.find('article')
-    # print(article)
+    article = {}
+
+    article['mod'] = mod
+    article['url'] = url
     
+    title = soup.find('title').text
+    article['title'] = title
+    #print('title= ' + title)
+
+    desc = soup.find(attrs={'property':'og:description'}).get('content')
+    article['desc'] = desc
+    #print('desc= ' + desc)
+
+    tag = soup.find(attrs={'property':'article:tag'})
+    if (tag != None):
+        tag = tag.get('content')
+        article['tag'] = tag
+        #print('tags= ' + tag) 
+
+    section = soup.find(attrs={'property':'article:section'})
+    if (section != None):
+        section = section.get('content')
+        article['section'] = section
+        #print('section= ' + section + '\n\n') 
+ 
     #-- save to db
-    # db.hset(mod, 'url', url)
-    # print('--- ↓ redis ↓ ---')
-    # print(db.hget(mod, 'url'))
-    # print('--- ↑ redis ↑ ---')
+    db.hmset('entry', article)
+    print('--- ↓ entry ↓ ---')
+    print(db.hgetall('entry'))
+    print('--- ↑ entry ↑ ---\n')
 
 
