@@ -1,2 +1,3 @@
 .python-version
 dump.rdb
+*.csv
