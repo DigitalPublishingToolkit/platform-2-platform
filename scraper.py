@@ -105,7 +105,7 @@ with requests.Session() as s:
         article['body-tokens'] = cptg
 
         #-- add to csv only if article has body-text
-        f.writerow([article['mod'], article['url'], article['title'], article['desc'], article['tag'], article['section'], article['copy'], article['body-tokens'])
+        f.writerow([article['mod'], article['url'], article['title'], article['desc'], article['tag'], article['section'], article['copy'], article['body-tokens']])
 
   elif (t_url == sitemap[1]):
     #-- unstudio
@@ -164,8 +164,71 @@ with requests.Session() as s:
           #-- add to csv only if article has body-text
           f.writerow([article['mod'], article['url'], article['title'], article['tag'], article['body'], article['body-tokens']])
 
-  else:
-    print('build proper scraper for ' + t_url)
+  elif(t_url == sitemap[2]):
+    print('scraping ✂︎')
+    name = 'open'
+
+    output = io.StringIO()
+    f = csv.writer(open('%s.csv' % name, 'w'))
+    f.writerow(['mod', 'url', 'title', 'desc', 'tags', 'theme', 'author', 'date', 'body', 'body-tokens'])
+    writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
+
+    for mod, url in index.items():
+      #-- if lastmod is newer than prev lastmod
+      art = s.get(url)
+      print(url)
+      soup = BeautifulSoup(art.text, 'lxml')
+
+      #-- extract infos and make dict
+      article = {}
+
+      article['mod'] = mod
+      #f.writerow([mod])
+      article['url'] = url
+ 
+      title = soup.find(attrs={'property':'og:title'}).get('content')
+      article['title'] = title
+
+      desc = soup.find(attrs={'property':'og:description'}).get('content')
+      article['desc'] = desc
+
+      # to fix
+      tag = soup.find(attrs={'filtername':'tag'}).find('div', class_='optiontype')
+      if (tag != None):
+        print(tag)
+        article['tag'] = tag
+      else:
+        article['tag'] = '' 
+
+      theme = soup.find('p', class_='theme')
+      if (theme != None):
+        article['theme'] = theme.text
+
+      author = soup.find('p', class_='author')
+      if (author != None):
+        article['author'] = author.text
+
+      date = soup.find('p', class_='date')
+      if (date != None):
+        date.span.replaceWith('')
+        article['date'] = date.text
+
+      #-- copy
+      body = soup.find('div', id='text').select('.contentCluster')
+      if (body != None):
+        pp = soup.find_all('p')
+        copy = []
+        for p in pp:
+            copy.append(p.text)
+        copy = "\n".join(copy)
+        article['body'] = copy
+
+        cptk = nltk.word_tokenize(copy)
+        cptg = nltk.pos_tag(cptk)
+        article['body-tokens'] = cptg
+
+        #-- add to csv only if article has body-text
+        f.writerow([article['mod'], article['url'], article['title'], article['desc'], article['tag'], article['theme'], article['author'], article['date'], article['body'], article['body-tokens']])
 
   
   print('scraping completed!!')
