@@ -17,7 +17,6 @@ r = requests.get(t_url)
 data = r.text
 
 #-- make dict with { <lastmod>: <url> }
-
 soup = BeautifulSoup(data, "lxml")
 
 url = []
@@ -41,7 +40,6 @@ pp = pprint.PrettyPrinter(indent=2)
 # pp.pprint(index)
 
 #-- fetch all pages and save them in the db
-
 # ['<lastmod>': {
 #   title: <title>,
 #   url: <url>,
@@ -72,7 +70,6 @@ with requests.Session() as s:
       article = {}
 
       article['mod'] = mod
-      #f.writerow([mod])
       article['url'] = url
  
       title = soup.find('title').text
@@ -221,5 +218,5 @@ with requests.Session() as s:
         #-- add to csv only if article has body-text
         f.writerow([article['mod'], article['url'], article['title'], article['desc'], article['theme'], article['author'], article['date'], article['body'], article['body-tokens']])
 
-  
+  # -- end 
   print('scraping completed!!')
