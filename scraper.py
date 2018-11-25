@@ -170,7 +170,7 @@ with requests.Session() as s:
 
     output = io.StringIO()
     f = csv.writer(open('%s.csv' % name, 'w'))
-    f.writerow(['mod', 'url', 'title', 'desc', 'tags', 'theme', 'author', 'date', 'body', 'body-tokens'])
+    f.writerow(['mod', 'url', 'title', 'desc', 'theme', 'author', 'date', 'body', 'body-tokens'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
     for mod, url in index.items():
@@ -183,7 +183,6 @@ with requests.Session() as s:
       article = {}
 
       article['mod'] = mod
-      #f.writerow([mod])
       article['url'] = url
  
       title = soup.find(attrs={'property':'og:title'}).get('content')
@@ -191,14 +190,6 @@ with requests.Session() as s:
 
       desc = soup.find(attrs={'property':'og:description'}).get('content')
       article['desc'] = desc
-
-      # to fix
-      tag = soup.find(attrs={'filtername':'tag'}).find('div', class_='optiontype')
-      if (tag != None):
-        print(tag)
-        article['tag'] = tag
-      else:
-        article['tag'] = '' 
 
       theme = soup.find('p', class_='theme')
       if (theme != None):
@@ -228,7 +219,7 @@ with requests.Session() as s:
         article['body-tokens'] = cptg
 
         #-- add to csv only if article has body-text
-        f.writerow([article['mod'], article['url'], article['title'], article['desc'], article['tag'], article['theme'], article['author'], article['date'], article['body'], article['body-tokens']])
+        f.writerow([article['mod'], article['url'], article['title'], article['desc'], article['theme'], article['author'], article['date'], article['body'], article['body-tokens']])
 
   
   print('scraping completed!!')
