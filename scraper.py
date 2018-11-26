@@ -2,8 +2,13 @@ import sys
 import requests
 from bs4 import BeautifulSoup
 import pprint
+import contractions
 import nltk
 from nltk.tag import pos_tag_sents
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+from nltk import ngrams, FreqDist
+import re
 
 import io
 import csv
@@ -159,7 +164,7 @@ with requests.Session() as s:
           article['body-tokens'] = cptg
 
           #-- add to csv only if article has body-text
-          f.writerow([article['mod'], article['url'], article['title'], article['tag'], article['body'], article['body-tokens']])
+          f.writerow([article['mod'], article['url'], article['title'], article['tag'], article['body'], article['body-tokens'], article['stop-words']])
 
   elif(t_url == sitemap[2]):
     print('scraping ✂︎')
@@ -167,7 +172,7 @@ with requests.Session() as s:
 
     output = io.StringIO()
     f = csv.writer(open('%s.csv' % name, 'w'))
-    f.writerow(['mod', 'url', 'title', 'desc', 'theme', 'author', 'date', 'body', 'body-tokens'])
+    f.writerow(['mod', 'url', 'title', 'desc', 'theme', 'author', 'date', 'body', 'body-tokens', 'stop-words'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
     for mod, url in index.items():
@@ -211,12 +216,42 @@ with requests.Session() as s:
         copy = "\n".join(copy)
         article['body'] = copy
 
-        cptk = nltk.word_tokenize(copy)
-        cptg = nltk.pos_tag(cptk)
-        article['body-tokens'] = cptg
+        #-- nltk
 
+        # take out punctuation
+        copy = re.sub(r'[^\w\s]', '', copy)
+        copy = copy.lower()
+
+        # expand to contraction form
+        copy = contractions.fix(copy)
+
+        # split into words
+        words = nltk.word_tokenize(copy)
+        article['body-tokens'] = words
+
+        # word-frequency
+        wordfreq = []
+        wf = FreqDist(words)
+        for word, freq in wf.most_common(100):
+            wwf = word, freq
+            print(wwf)
+            wordfreq.append(wwf)
+
+        # wtag = nltk.pos_tag(words)
+        # article['body-tokens'] = wtag 
+
+        # stopwords
+        sw = set(stopwords.words('english'))
+
+        stopws = []
+        for w in words:
+          if w in sw:
+            stopws.append(w)
+
+        article['stop-words'] = stopws
+        
         #-- add to csv only if article has body-text
-        f.writerow([article['mod'], article['url'], article['title'], article['desc'], article['theme'], article['author'], article['date'], article['body'], article['body-tokens']])
+        f.writerow([article['mod'], article['url'], article['title'], article['desc'], article['theme'], article['author'], article['date'], article['body'], article['body-tokens'], article['stop-words']])
 
   # -- end 
   print('scraping completed!!')
