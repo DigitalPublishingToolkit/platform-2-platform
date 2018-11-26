@@ -1,3 +1,4 @@
 .python-version
 dump.rdb
 *.csv
+*.zip
