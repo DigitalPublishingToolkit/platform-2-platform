@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 import pprint
 import contractions
 import nltk
-from nltk.tag import pos_tag_sents
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
 from nltk import ngrams, FreqDist
@@ -54,6 +53,54 @@ pp = pprint.PrettyPrinter(indent=2)
 #   body: [<p>, <p>, <bq>]
 # }]
 
+# + + + + + + + + + + + + +
+#-- text processing w/ nltk
+
+#-- text-clean-up
+def text_cu (text):
+  # take out punctuation
+  text = re.sub(r'[^\w\s]', '', text)
+  text = text.lower()
+
+  # expand to contraction form
+  text = contractions.fix(text)
+  return text
+
+#-- stop-words
+def stop_words (text):
+  sw = set(stopwords.words('english'))
+
+  stop_words = []
+  wordsclean = []
+  for w in text:
+    if w in sw:
+      stop_words.append(w)
+    else:
+      wordsclean.append(w)
+
+  article['body-tokens'] = wordsclean
+  article['stop-words'] = stop_words
+
+#-- word-frequency
+def word_freq (text):
+  wordfreq = []
+  wf = FreqDist(text)
+  for word, freq in wf.most_common():
+    wwf = word, freq
+    wordfreq.append(wwf)
+
+  article['word-freq'] = wordfreq
+
+#-- n-word phrases frequency
+def phrases_freq (text, size):
+  pf = dict()
+  pf = FreqDist(ngrams(text, size))
+
+  article['2w-phrases'] = pf.most_common()
+
+    
+# + + + + +
+#-- scraping
 with requests.Session() as s:
   print(t_url, sitemap[0])
 
@@ -63,12 +110,13 @@ with requests.Session() as s:
 
     output = io.StringIO()
     f = csv.writer(open('%s.csv' % name, 'w'))
-    f.writerow(['mod', 'url', 'title', 'desc', 'tags', 'section', 'body', 'body-tokens'])
+    f.writerow(['mod', 'url', 'title', 'desc', 'tags', 'section', 'body', 'body-tokens', 'stop-words','word-freq' , '2-word phrases'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
     for mod, url in index.items():
       #-- if lastmod is newer than prev lastmod
       art = s.get(url)
+      print(url)
       soup = BeautifulSoup(art.text, 'lxml')
 
       #-- extract infos and make dict
@@ -93,6 +141,7 @@ with requests.Session() as s:
         section = section.get('content')
         article['section'] = section
 
+      #-- copy
       body = soup.find('article')
       if (body != None):
         pp = soup.find_all('p')
@@ -102,12 +151,15 @@ with requests.Session() as s:
         copy = "".join(copy)
         article['body'] = copy
 
-        cptk = nltk.word_tokenize(copy)
-        cptg = nltk.pos_tag(cptk)
-        article['body-tokens'] = cptg
+        words = text_cu(copy)
+        words = nltk.word_tokenize(words)
+        stop_words(words)
 
+        word_freq(article['body-tokens']) 
+        phrases_freq(article['body-tokens'], 2)
+            
         #-- add to csv only if article has body-text
-        f.writerow([article['mod'], article['url'], article['title'], article['desc'], article['tag'], article['section'], article['copy'], article['body-tokens']])
+        f.writerow(article.values())
 
   elif (t_url == sitemap[1]):
     #-- unstudio
@@ -116,12 +168,13 @@ with requests.Session() as s:
       
     output = io.StringIO()
     f = csv.writer(open('%s.csv' % name, 'w'))
-    f.writerow(['mod', 'url', 'title', 'tags', 'body', 'body-tokens'])
+    f.writerow(['mod', 'url', 'title', 'tags', 'body', 'body-tokens', 'stop-words','word-freq' , '2-word phrases'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
     for mod, url in index.items():
       #-- if lastmod is newer than prev lastmod
       art = s.get(url, allow_redirects=False)
+      print(url)
       soup = BeautifulSoup(art.text, 'lxml')
 
       #-- extract infos and make dict
@@ -129,7 +182,6 @@ with requests.Session() as s:
 
       article['mod'] = mod
       article['url'] = url
-      print(url)
  
       title = soup.find('title')
       if (title != None):
@@ -159,12 +211,15 @@ with requests.Session() as s:
           copy = "".join(copy)
           article['body'] = copy
 
-          cptk = nltk.word_tokenize(copy)
-          cptg = nltk.pos_tag(cptk)
-          article['body-tokens'] = cptg
+          words = text_cu(copy)
+          words = nltk.word_tokenize(words)
+          stop_words(words)
+
+          word_freq(article['body-tokens']) 
+          phrases_freq(article['body-tokens'], 2)
 
           #-- add to csv only if article has body-text
-          f.writerow([article['mod'], article['url'], article['title'], article['tag'], article['body'], article['body-tokens'], article['stop-words']])
+          f.writerow(article.values())
 
   elif(t_url == sitemap[2]):
     print('scraping ✂︎')
@@ -172,7 +227,7 @@ with requests.Session() as s:
 
     output = io.StringIO()
     f = csv.writer(open('%s.csv' % name, 'w'))
-    f.writerow(['mod', 'url', 'title', 'desc', 'theme', 'author', 'date', 'body', 'body-tokens', 'stop-words'])
+    f.writerow(['mod', 'url', 'title', 'desc', 'theme', 'author', 'date', 'body', 'body-tokens', 'stop-words','word-freq' , '2-word phrases'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
     for mod, url in index.items():
@@ -216,42 +271,15 @@ with requests.Session() as s:
         copy = "\n".join(copy)
         article['body'] = copy
 
-        #-- nltk
+        words = text_cu(copy)
+        words = nltk.word_tokenize(words)
+        stop_words(words)
 
-        # take out punctuation
-        copy = re.sub(r'[^\w\s]', '', copy)
-        copy = copy.lower()
+        word_freq(article['body-tokens']) 
+        phrases_freq(article['body-tokens'], 2)
 
-        # expand to contraction form
-        copy = contractions.fix(copy)
-
-        # split into words
-        words = nltk.word_tokenize(copy)
-        article['body-tokens'] = words
-
-        # word-frequency
-        wordfreq = []
-        wf = FreqDist(words)
-        for word, freq in wf.most_common(100):
-            wwf = word, freq
-            print(wwf)
-            wordfreq.append(wwf)
-
-        # wtag = nltk.pos_tag(words)
-        # article['body-tokens'] = wtag 
-
-        # stopwords
-        sw = set(stopwords.words('english'))
-
-        stopws = []
-        for w in words:
-          if w in sw:
-            stopws.append(w)
-
-        article['stop-words'] = stopws
-        
         #-- add to csv only if article has body-text
-        f.writerow([article['mod'], article['url'], article['title'], article['desc'], article['theme'], article['author'], article['date'], article['body'], article['body-tokens'], article['stop-words']])
+        f.writerow(article.values())
 
   # -- end 
   print('scraping completed!!')
