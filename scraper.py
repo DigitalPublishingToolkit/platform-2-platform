@@ -1,4 +1,5 @@
 import sys
+import time
 import requests
 from bs4 import BeautifulSoup
 import pprint
@@ -12,9 +13,11 @@ import re
 import io
 import csv
 
+import json
+
 #-- get sitemap
 
-sitemap = ['https://amateurcities.com/post-sitemap.xml', 'https://www.unstudio.com/sitemap.xml', 'https://www.onlineopen.org/sitemap.xml']
+sitemap = ['https://amateurcities.com/post-sitemap.xml', 'https://www.unstudio.com/sitemap.xml', 'https://www.onlineopen.org/sitemap.xml', 'http://hub.openset.nl/backend/wp-json']
 
 t_url = sys.argv[1]
 r = requests.get(t_url)
@@ -96,22 +99,24 @@ def phrases_freq (text, size):
   pf = dict()
   pf = FreqDist(ngrams(text, size))
 
-  article['2w-phrases'] = pf.most_common()
+  article[str(size) + 'w-phrases'] = pf.most_common()
 
     
 # + + + + +
 #-- scraping
 with requests.Session() as s:
-  print(t_url, sitemap[0])
-
   if (t_url == sitemap[0]):
     print('scraping ✂︎')
     name = 'amateurcities'
+    timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+    filename = name + '_' + timestamp
 
     output = io.StringIO()
     f = csv.writer(open('%s.csv' % name, 'w'))
-    f.writerow(['mod', 'url', 'title', 'desc', 'tags', 'section', 'body', 'body-tokens', 'stop-words','word-freq' , '2-word phrases'])
+    f.writerow(['mod', 'url', 'title', 'desc', 'tags', 'section', 'body', 'body-tokens', 'stop-words','word-freq' , '2-word phrases', '3-word phrases'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
+
+    articles = []
 
     for mod, url in index.items():
       #-- if lastmod is newer than prev lastmod
@@ -135,11 +140,15 @@ with requests.Session() as s:
       if (tag != None):
         tag = tag.get('content')
         article['tag'] = tag
+      else:
+        article['tag'] = 'empty'
 
       section = soup.find(attrs={'property':'article:section'})
       if (section != None):
         section = section.get('content')
         article['section'] = section
+      else:
+        article['section'] = 'empty'
 
       #-- copy
       body = soup.find('article')
@@ -147,7 +156,7 @@ with requests.Session() as s:
         pp = soup.find_all('p')
         copy = []
         for p in pp:
-            copy.append(p.text)
+          copy.append(p.text)
         copy = "".join(copy)
         article['body'] = copy
 
@@ -156,20 +165,32 @@ with requests.Session() as s:
         stop_words(words)
 
         word_freq(article['body-tokens']) 
+
         phrases_freq(article['body-tokens'], 2)
-            
+        phrases_freq(article['body-tokens'], 3)
+
         #-- add to csv only if article has body-text
-        f.writerow(article.values())
+        # f.writerow(article.values())
+
+        articles.append(article)
+
+    with open('%s.json' % filename, 'w') as fp:
+      json.dump(articles, fp)
+
 
   elif (t_url == sitemap[1]):
     #-- unstudio
     print('scraping ✂︎')
     name = 'unstudio'
+    timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+    filename = name + '_' + timestamp
       
     output = io.StringIO()
-    f = csv.writer(open('%s.csv' % name, 'w'))
-    f.writerow(['mod', 'url', 'title', 'tags', 'body', 'body-tokens', 'stop-words','word-freq' , '2-word phrases'])
+    f = csv.writer(open('%s.csv' % filename, 'w'))
+    f.writerow(['mod', 'url', 'title', 'tags', 'body', 'body-tokens', 'stop-words', 'word-freq', '2-word phrases', '3-word phrases'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
+
+    articles = []
 
     for mod, url in index.items():
       #-- if lastmod is newer than prev lastmod
@@ -199,7 +220,7 @@ with requests.Session() as s:
           tag = tag.text
           article['tag'] = tag
         else:
-          article['tag'] = ''
+          article['tag'] = 'empty'
 
         #-- copy
         text = body.find('div', class_='block--text')
@@ -216,19 +237,31 @@ with requests.Session() as s:
           stop_words(words)
 
           word_freq(article['body-tokens']) 
+
           phrases_freq(article['body-tokens'], 2)
+          phrases_freq(article['body-tokens'], 3)
+
+          articles.append(article)
 
           #-- add to csv only if article has body-text
-          f.writerow(article.values())
+          # f.writerow(article.values())
+
+      with open('%s.json' % filename, 'w') as fp:
+        json.dump(articles, fp)
+
 
   elif(t_url == sitemap[2]):
     print('scraping ✂︎')
     name = 'open'
+    timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+    filename = name + '_' + timestamp
 
     output = io.StringIO()
-    f = csv.writer(open('%s.csv' % name, 'w'))
-    f.writerow(['mod', 'url', 'title', 'desc', 'theme', 'author', 'date', 'body', 'body-tokens', 'stop-words','word-freq' , '2-word phrases'])
+    f = csv.writer(open('%s.csv' % filename, 'w'))
+    f.writerow(['mod', 'url', 'title', 'desc', 'theme', 'author', 'date', 'body', 'body-tokens', 'stop-words','word-freq' , '2-word phrases', '3-word phrases'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
+
+    articles = []
 
     for mod, url in index.items():
       #-- if lastmod is newer than prev lastmod
@@ -251,15 +284,14 @@ with requests.Session() as s:
       theme = soup.find('p', class_='theme')
       if (theme != None):
         article['theme'] = theme.text
+      else:
+        article['theme'] = 'empty'
 
       author = soup.find('p', class_='author')
       if (author != None):
         article['author'] = author.text
-
-      date = soup.find('p', class_='date')
-      if (date != None):
-        date.span.replaceWith('')
-        article['date'] = date.text
+      else:
+        article['author'] = 'empty'
 
       #-- copy
       body = soup.find('div', id='text').select('.contentCluster')
@@ -276,10 +308,24 @@ with requests.Session() as s:
         stop_words(words)
 
         word_freq(article['body-tokens']) 
+
         phrases_freq(article['body-tokens'], 2)
+        phrases_freq(article['body-tokens'], 3)
 
         #-- add to csv only if article has body-text
-        f.writerow(article.values())
+        # f.writerow(article.values())
 
+        articles.append(article)
+
+    with open('%s.json' % filename, 'w') as fp:
+        json.dump(articles, fp)
+
+
+  elif(t_url == sitemap[3]):
+    print(t_url)
+
+    r = requests.get(t_url)
+    print(r.status_code, r.headers['content-type'], r.encoding, r.json())
+            
   # -- end 
   print('scraping completed!!')
