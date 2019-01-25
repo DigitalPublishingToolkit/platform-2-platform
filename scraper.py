@@ -6,6 +6,7 @@ import pprint
 import contractions
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 from nltk import ngrams, FreqDist
 import re
@@ -17,9 +18,14 @@ import json
 
 #-- get sitemap
 
-sitemap = ['https://amateurcities.com/post-sitemap.xml', 'https://www.unstudio.com/sitemap.xml', 'https://www.onlineopen.org/sitemap.xml', 'http://hub.openset.nl/backend/wp-json']
+sitemap = {
+  'ac': 'https://amateurcities.com/post-sitemap.xml',
+  'un': 'https://www.unstudio.com/sitemap.xml',
+  'oo': 'https://www.onlineopen.org/sitemap.xml',
+  'os': 'http://hub.openset.nl/backend/wp-json'
+}
 
-t_url = sys.argv[1]
+t_url = sitemap[sys.argv[1]]
 r = requests.get(t_url)
 data = r.text
 
@@ -67,6 +73,7 @@ def text_cu (text):
 
   # expand to contraction form
   text = contractions.fix(text)
+
   return text
 
 #-- stop-words
@@ -82,7 +89,7 @@ def stop_words (text):
       wordsclean.append(w)
 
   article['body-tokens'] = wordsclean
-  article['stop-words'] = stop_words
+  # article['stop-words'] = stop_words
 
 #-- word-frequency
 def word_freq (text):
@@ -101,19 +108,18 @@ def phrases_freq (text, size):
 
   article[str(size) + 'w-phrases'] = pf.most_common()
 
-    
 # + + + + +
 #-- scraping
 with requests.Session() as s:
-  if (t_url == sitemap[0]):
+  if (t_url == sitemap['ac']):
     print('scraping ✂︎')
     name = 'amateurcities'
     timestamp = time.strftime("%Y-%m-%d-%H%M%S")
     filename = name + '_' + timestamp
 
     output = io.StringIO()
-    f = csv.writer(open('%s.csv' % name, 'w'))
-    f.writerow(['mod', 'url', 'title', 'desc', 'tags', 'section', 'body', 'body-tokens', 'stop-words','word-freq' , '2-word phrases', '3-word phrases'])
+    f = csv.writer(open('dump/%s.csv' % filename, 'w'))
+    f.writerow(['mod', 'url', 'title', 'desc', 'tags', 'section', 'body', 'body-tokens', 'word-freq' , '2-word phrases', '3-word phrases'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
     articles = []
@@ -129,7 +135,7 @@ with requests.Session() as s:
 
       article['mod'] = mod
       article['url'] = url
- 
+
       title = soup.find('title').text
       article['title'] = title
 
@@ -161,33 +167,38 @@ with requests.Session() as s:
         article['body'] = copy
 
         words = text_cu(copy)
+
+        #-- tokenize & lemmatize
         words = nltk.word_tokenize(words)
+        lemmatizer = WordNetLemmatizer()
+        words = [lemmatizer.lemmatize(word) for word in words]
+
         stop_words(words)
 
-        word_freq(article['body-tokens']) 
+        word_freq(article['body-tokens'])
 
         phrases_freq(article['body-tokens'], 2)
         phrases_freq(article['body-tokens'], 3)
 
         #-- add to csv only if article has body-text
-        # f.writerow(article.values())
+        f.writerow(article.values())
 
         articles.append(article)
 
-    with open('%s.json' % filename, 'w') as fp:
+    with open('dump/%s.json' % filename, 'w') as fp:
       json.dump(articles, fp)
 
 
-  elif (t_url == sitemap[1]):
+  elif (t_url == sitemap['un']):
     #-- unstudio
     print('scraping ✂︎')
     name = 'unstudio'
     timestamp = time.strftime("%Y-%m-%d-%H%M%S")
     filename = name + '_' + timestamp
-      
+
     output = io.StringIO()
-    f = csv.writer(open('%s.csv' % filename, 'w'))
-    f.writerow(['mod', 'url', 'title', 'tags', 'body', 'body-tokens', 'stop-words', 'word-freq', '2-word phrases', '3-word phrases'])
+    f = csv.writer(open('dump/%s.csv' % filename, 'w'))
+    f.writerow(['mod', 'url', 'title', 'tags', 'body', 'body-tokens', 'word-freq', '2-word phrases', '3-word phrases'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
     articles = []
@@ -203,7 +214,7 @@ with requests.Session() as s:
 
       article['mod'] = mod
       article['url'] = url
- 
+
       title = soup.find('title')
       if (title != None):
         article['title'] = title.text
@@ -233,10 +244,15 @@ with requests.Session() as s:
           article['body'] = copy
 
           words = text_cu(copy)
+
+          #-- tokenize & lemmatize
           words = nltk.word_tokenize(words)
+          lemmatizer = WordNetLemmatizer()
+          words = [lemmatizer.lemmatize(word) for word in words]
+
           stop_words(words)
 
-          word_freq(article['body-tokens']) 
+          word_freq(article['body-tokens'])
 
           phrases_freq(article['body-tokens'], 2)
           phrases_freq(article['body-tokens'], 3)
@@ -244,21 +260,21 @@ with requests.Session() as s:
           articles.append(article)
 
           #-- add to csv only if article has body-text
-          # f.writerow(article.values())
+          f.writerow(article.values())
 
-      with open('%s.json' % filename, 'w') as fp:
+      with open('dump/%s.json' % filename, 'w') as fp:
         json.dump(articles, fp)
 
 
-  elif(t_url == sitemap[2]):
+  elif(t_url == sitemap['oo']):
     print('scraping ✂︎')
     name = 'open'
     timestamp = time.strftime("%Y-%m-%d-%H%M%S")
     filename = name + '_' + timestamp
 
     output = io.StringIO()
-    f = csv.writer(open('%s.csv' % filename, 'w'))
-    f.writerow(['mod', 'url', 'title', 'desc', 'theme', 'author', 'date', 'body', 'body-tokens', 'stop-words','word-freq' , '2-word phrases', '3-word phrases'])
+    f = csv.writer(open('dump/%s.csv' % filename, 'w'))
+    f.writerow(['mod', 'url', 'title', 'desc', 'tags', 'author', 'body', 'body-tokens', 'word-freq' , '2-word phrases', '3-word phrases'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
     articles = []
@@ -274,18 +290,23 @@ with requests.Session() as s:
 
       article['mod'] = mod
       article['url'] = url
- 
+
       title = soup.find(attrs={'property':'og:title'}).get('content')
       article['title'] = title
 
       desc = soup.find(attrs={'property':'og:description'}).get('content')
+      desclist = []
       article['desc'] = desc
 
-      theme = soup.find('p', class_='theme')
-      if (theme != None):
-        article['theme'] = theme.text
+      tags = soup.find(attrs={'name':'keywords'}).get('content').split(',')
+      if (tags != None):
+        taglist = []
+        for tag in tags:
+          taglist.append(tag)
+
+        article['tags'] = taglist
       else:
-        article['theme'] = 'empty'
+        article['tags'] = 'empty'
 
       author = soup.find('p', class_='author')
       if (author != None):
@@ -296,36 +317,88 @@ with requests.Session() as s:
       #-- copy
       body = soup.find('div', id='text').select('.contentCluster')
       if (body != None):
-        pp = soup.find_all('p')
+        pp = []
+        for block in body:
+          item = block.find_all('p')
+          if (item != None):
+            pp.append(item)
+
         copy = []
+
         for p in pp:
-            copy.append(p.text)
+          for item in p:
+            copy.append(item.text)
         copy = "\n".join(copy)
         article['body'] = copy
 
         words = text_cu(copy)
+
+        #-- tokenize & lemmatize
         words = nltk.word_tokenize(words)
+        lemmatizer = WordNetLemmatizer()
+        words = [lemmatizer.lemmatize(word) for word in words]
+
         stop_words(words)
 
-        word_freq(article['body-tokens']) 
+        word_freq(article['body-tokens'])
 
         phrases_freq(article['body-tokens'], 2)
         phrases_freq(article['body-tokens'], 3)
 
         #-- add to csv only if article has body-text
-        # f.writerow(article.values())
+        f.writerow(article.values())
 
         articles.append(article)
 
-    with open('%s.json' % filename, 'w') as fp:
+    with open('dump/%s.json' % filename, 'w') as fp:
         json.dump(articles, fp)
 
+  elif(t_url == sitemap['os']):
+    print('scraping ✂︎')
+    name = 'openset'
+    timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+    filename = name + '_' + timestamp
 
-  elif(t_url == sitemap[3]):
-    print(t_url)
+    apis = {
+      'project': 'http://hub.openset.nl/backend/wp-json/wp/v2/project',
+      'expert': 'http://hub.openset.nl/backend/wp-json/swp_api/search',
+      'categories': 'http://hub.openset.nl/backend/wp-json/wp/v2/categories',
+    }
 
-    r = requests.get(t_url)
-    print(r.status_code, r.headers['content-type'], r.encoding, r.json())
-            
+    rproj = requests.get(apis['project'])
+    projdata = rproj.json()
+
+    rcat = requests.get(apis['categories'])
+    catdata = rcat.json()
+
+    projects = []
+
+    for project in projdata:
+      article = {}
+
+      article['mod'] = project['modified_gmt']
+      article['url'] = 'http://hub.openset.nl/' + project['type'] + '/' + project['slug']
+      print(article['url'])
+
+      article['title'] = project['title']['rendered']
+
+      # look up categories
+      for cat in catdata:
+        if (cat['id'] == project['categories'][0]):
+          article['tags'] = cat['name']
+
+      # names = project['acf']['student_name']
+      # authors = list(map(str.strip, names.split(',')))
+      # authors = list(filter(authors[i] for i in 1 == 0, authors))
+      # print(authors)
+      # article['author'] = authors
+
+      # add to articles
+      projects.append(article)
+
+    #-- write to json file
+    with open('%s.json' % filename, 'w') as fp:
+      json.dump(projects, fp)
+
   # -- end 
   print('scraping completed!!')
