@@ -1,4 +1,4 @@
 .python-version
 dump.rdb
-*.csv
-*.zip
+share/
+dump/
