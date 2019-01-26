@@ -359,6 +359,11 @@ with requests.Session() as s:
     timestamp = time.strftime("%Y-%m-%d-%H%M%S")
     filename = name + '_' + timestamp
 
+    output = io.StringIO()
+    f = csv.writer(open('dump/%s.csv' % filename, 'w'))
+    f.writerow(['mod', 'url', 'title', 'desc', 'tags', 'author', 'body', 'body-tokens', 'word-freq' , '2-word phrases', '3-word phrases'])
+    writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
+
     apis = {
       'project': 'http://hub.openset.nl/backend/wp-json/wp/v2/project',
       'expert': 'http://hub.openset.nl/backend/wp-json/swp_api/search',
@@ -367,6 +372,9 @@ with requests.Session() as s:
 
     rproj = requests.get(apis['project'])
     projdata = rproj.json()
+
+    rexps = requests.get(apis['expert'])
+    expsdata = rexps.json()
 
     rcat = requests.get(apis['categories'])
     catdata = rcat.json()
@@ -381,24 +389,145 @@ with requests.Session() as s:
       print(article['url'])
 
       article['title'] = project['title']['rendered']
+      article['desc'] = 'None'
 
       # look up categories
       for cat in catdata:
-        if (cat['id'] == project['categories'][0]):
-          article['tags'] = cat['name']
+        if(len(project['categories']) > 0):
+          if (cat['id'] == project['categories'][0]):
+            article['tags'] = cat['name']
 
-      # names = project['acf']['student_name']
-      # authors = list(map(str.strip, names.split(',')))
-      # authors = list(filter(authors[i] for i in 1 == 0, authors))
-      # print(authors)
-      # article['author'] = authors
+      names = project['acf']['student_name']
+      names = list(map(str.strip, names.split(',')))
+      names = list(enumerate(names))
 
-      # add to articles
+      authors = []
+      for name in names:
+        if (name[0] %2 == 0):
+          authors.append(name[1])
+
+      article['author'] = authors
+
+      textual = []
+      texts = project['acf']
+      for k, v in texts.items():
+        if 'textual' in k:
+          textual.append(v)
+
+      copy = []
+      for text in textual:
+        for block in text:
+          for k, v in block.items():
+            if k == 'text_content':
+              copy.append(v)
+
+      soup = []
+      for p in copy:
+        soup.append(BeautifulSoup(p, 'lxml'))
+
+      body = []
+      for p in soup:
+        body.append(p.text)
+
+      body = "\n".join(body)
+      article['body'] = body
+
+      #-- nltk --#
+
+      words = text_cu(body)
+
+      #-- tokenize & lemmatize
+      words = nltk.word_tokenize(words)
+      lemmatizer = WordNetLemmatizer()
+      words = [lemmatizer.lemmatize(word) for word in words]
+
+      stop_words(words)
+
+      word_freq(article['body-tokens'])
+
+      phrases_freq(article['body-tokens'], 2)
+      phrases_freq(article['body-tokens'], 3)
+
+      #-- add to csv only if article has body-text
+      f.writerow(article.values())
+
+      #-- add to articles
       projects.append(article)
 
     #-- write to json file
-    with open('%s.json' % filename, 'w') as fp:
+    with open('dump/%s.json' % filename, 'w') as fp:
       json.dump(projects, fp)
+
+    for ex in expsdata:
+      article = {}
+
+      article['mod'] = ex['modified_gmt']
+      article['url'] = 'http://hub.openset.nl/' + 'expertinput/' + ex['slug']
+      print(article['url'])
+
+      article['title'] = ex['title']['rendered']
+
+      def getText(text):
+        arr = []
+        soup = BeautifulSoup(text, 'lxml')
+        for p in soup:
+          arr.append(p.text)
+
+        arr = "\n".join(arr)
+        return arr
+
+      desc = getText(ex['excerpt']['rendered'])
+
+      article['desc'] = desc
+
+      # look up categories
+      for cat in catdata:
+        if(len(ex['categories']) > 0):
+          if (cat['id'] == ex['categories'][0]):
+            article['tags'] = cat['name']
+
+      # authors
+      names = ex['acf']['student_name']
+      names = list(map(str.strip, names.split(',')))
+      names = list(enumerate(names))
+
+      authors = []
+      for name in names:
+        if (name[0] %2 == 0):
+          authors.append(name[1])
+
+      article['author'] = authors
+
+      #-- copy
+      copy = getText(ex['content']['rendered'])
+      article['body'] = copy
+
+      #-- nltk --#
+
+      words = text_cu(copy)
+
+      #-- tokenize & lemmatize
+      words = nltk.word_tokenize(words)
+      lemmatizer = WordNetLemmatizer()
+      words = [lemmatizer.lemmatize(word) for word in words]
+
+      stop_words(words)
+
+      word_freq(article['body-tokens'])
+
+      phrases_freq(article['body-tokens'], 2)
+      phrases_freq(article['body-tokens'], 3)
+
+      #-- add to csv only if article has body-text
+      f.writerow(article.values())
+
+      #-- add to articles
+      projects.append(article)
+
+    #-- write to json file
+    with open('dump/%s.json' % filename, 'w') as fp:
+      json.dump(projects, fp)
+
 
   # -- end 
   print('scraping completed!!')
