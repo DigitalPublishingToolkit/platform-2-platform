@@ -15,6 +15,7 @@ import io
 import csv
 
 import json
+import markdown
 
 #-- get sitemap
 
@@ -22,7 +23,8 @@ sitemap = {
   'ac': 'https://amateurcities.com/post-sitemap.xml',
   'un': 'https://www.unstudio.com/sitemap.xml',
   'oo': 'https://www.onlineopen.org/sitemap.xml',
-  'os': 'http://hub.openset.nl/backend/wp-json'
+  'os': 'http://hub.openset.nl/backend/wp-json',
+  'osr': 'http://openset.nl/reader/pocket/api/get.php?type=root&id=root'
 }
 
 t_url = sitemap[sys.argv[1]]
@@ -142,12 +144,16 @@ with requests.Session() as s:
       desc = soup.find(attrs={'property':'og:description'}).get('content')
       article['desc'] = desc
 
-      tag = soup.find(attrs={'property':'article:tag'})
-      if (tag != None):
-        tag = tag.get('content')
-        article['tag'] = tag
+      tags = soup.find_all(attrs={'property':'article:tag'})
+      if (len(tags) > 0):
+        ttag = []
+        for tag in tags:
+          tag = tag.get('content')
+          ttag.append(tag)
       else:
         article['tag'] = 'empty'
+
+      article['tag'] = ttag
 
       section = soup.find(attrs={'property':'article:section'})
       if (section != None):
@@ -527,6 +533,80 @@ with requests.Session() as s:
     #-- write to json file
     with open('dump/%s.json' % filename, 'w') as fp:
       json.dump(projects, fp)
+
+  elif(t_url == sitemap['osr']):
+    print('scraping ✂︎')
+    name = 'openset-reader'
+    timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+    filename = name + '_' + timestamp
+
+    output = io.StringIO()
+    f = csv.writer(open('dump/%s.csv' % filename, 'w'))
+    f.writerow(['mod', 'url', 'title', 'desc', 'tags', 'author', 'body', 'body-tokens', 'word-freq' , '2-word phrases', '3-word phrases'])
+    writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
+
+    osr = requests.get('http://openset.nl/reader/pocket/api/get.php?type=root&id=root')
+    data = osr.json()
+
+    obj = data['_pocketjoins']['map']
+
+    index = []
+    for item in obj:
+      for entry in item['_pocketjoins']['map']:
+        if (entry['publish'] == True):
+          index.append(entry['_pocketindex'])
+
+    articles = []
+    for slug in index:
+      art = s.get('http://openset.nl/reader/pocket/api/get.php?type=articles&id=' + slug)
+      entry = art.json()
+      print(slug)
+
+      article = {}
+
+      article['mod'] = 'empty'
+      article['url'] = 'http://openset.nl/reader/#!/article/' + slug
+
+      article['title'] = entry['title']
+      article['desc'] = 'empty'
+
+      article['tags'] = 'empty'
+      article['author'] = entry['author']
+
+      copy = []
+      for block in entry['text']:
+        for k,v in block.items():
+          if (k == 'content'):
+            rv = markdown.markdown(v)
+            hv = BeautifulSoup(rv, 'lxml')
+            copy.append(hv.text)
+
+      copy = "".join(copy)
+      article['body'] = copy
+
+      #-- nltk --#
+
+      words = text_cu(copy)
+
+      #-- tokenize & lemmatize
+      words = nltk.word_tokenize(words)
+      lemmatizer = WordNetLemmatizer()
+      words = [lemmatizer.lemmatize(word) for word in words]
+
+      stop_words(words)
+
+      word_freq(article['body-tokens'])
+
+      phrases_freq(article['body-tokens'], 2)
+      phrases_freq(article['body-tokens'], 3)
+
+      #-- add to csv only if article has body-text
+      f.writerow(article.values())
+
+      articles.append(article)
+
+    with open('dump/%s.json' % filename, 'w') as fp:
+        json.dump(articles, fp)
 
 
   # -- end 
