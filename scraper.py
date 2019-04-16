@@ -91,7 +91,7 @@ def stop_words (text):
       wordsclean.append(w)
 
   article['body-tokens'] = wordsclean
-  article['body-wl'] = len(wordsclean)
+  article['body-words-length'] = len(wordsclean)
   # article['stop-words'] = stop_words
 
 #-- word-frequency
@@ -133,7 +133,7 @@ with requests.Session() as s:
 
     output = io.StringIO()
     f = csv.writer(open('dump/%s.csv' % filename, 'w'))
-    f.writerow(['mod', 'url', 'title', 'abstract', 'tags', 'section', 'body', 'body-tokens', 'body-wl', 'word-freq', '2-word phrases', '3-word phrases', 'relevancy'])
+    f.writerow(['mod', 'url', 'title', 'publisher', 'abstract', 'tags', 'author', 'section', 'body', 'body-tokens', 'body-words-length', 'word-freq', '2-word phrases', '3-word phrases', 'relevancy'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
     articles = []
@@ -153,7 +153,9 @@ with requests.Session() as s:
       title = soup.find('title').text
       article['title'] = title
 
-      abstract = soup.find(attrs={'property':'og:abstractription'}).get('content')
+      article['publisher'] = 'Amateur Cities'
+
+      abstract = soup.find(attrs={'property':'og:description'}).get('content')
       article['abstract'] = abstract
 
       tags = soup.find_all(attrs={'property':'article:tag'})
@@ -163,9 +165,15 @@ with requests.Session() as s:
           tag = tag.get('content')
           ttag.append(tag)
       else:
-        article['tag'] = 'empty'
+        article['tags'] = 'empty'
 
-      article['tag'] = ttag
+      article['tags'] = ttag
+
+      author = soup.find('p', class_='author-name')
+      if (author != None):
+        article['author'] = author.contents[0].text
+      else:
+        article['author'] = 'empty'
 
       section = soup.find(attrs={'property':'article:section'})
       if (section != None):
@@ -181,7 +189,7 @@ with requests.Session() as s:
         copy = []
         for p in pp:
           copy.append(p.text)
-        copy = "".join(copy)
+        copy = "\n\n\n\n".join(copy)
         article['body'] = copy
 
         words = text_cu(copy)
@@ -195,8 +203,8 @@ with requests.Session() as s:
 
         word_freq(article['body-tokens'])
 
-        phrases_freq(article['body-tokens'], 2)
-        phrases_freq(article['body-tokens'], 3)
+        # phrases_freq(article['body-tokens'], 2)
+        # phrases_freq(article['body-tokens'], 3)
 
         relevancy(article['word-freq'])
 
@@ -218,7 +226,7 @@ with requests.Session() as s:
 
     output = io.StringIO()
     f = csv.writer(open('dump/%s.csv' % filename, 'w'))
-    f.writerow(['mod', 'url', 'title', 'tags', 'body', 'body-tokens', 'body-wl', 'word-freq', '2-word phrases', '3-word phrases', 'relevancy'])
+    f.writerow(['mod', 'url', 'title', 'tags', 'body', 'body-tokens', 'body-words-length', 'word-freq', '2-word phrases', '3-word phrases', 'relevancy'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
     articles = []
@@ -240,7 +248,7 @@ with requests.Session() as s:
         article['title'] = title.text
 
       # seems to be always empty by checking 4-5 articles
-      # abstract = soup.find(attrs={'property':'og:abstractription'}).get('content')
+      # abstract = soup.find(attrs={'property':'og:description'}).get('content')
       # article['abstract'] = abstract
 
       body = soup.find('article')
@@ -249,9 +257,9 @@ with requests.Session() as s:
         tag = body.find('div', class_='page-text__keyword')
         if (tag != None):
           tag = tag.text
-          article['tag'] = tag
+          article['tags'] = tag
         else:
-          article['tag'] = 'empty'
+          article['tags'] = 'empty'
 
         #-- copy
         text = body.find('div', class_='block--text')
@@ -296,7 +304,7 @@ with requests.Session() as s:
 
     output = io.StringIO()
     f = csv.writer(open('dump/%s.csv' % filename, 'w'))
-    f.writerow(['mod', 'url', 'title', 'abstract', 'tags', 'author', 'body', 'body-tokens', 'body-wl', 'word-freq' , '2-word phrases', '3-word phrases', 'relevancy'])
+    f.writerow(['mod', 'url', 'title', 'publisher', 'abstract', 'tags', 'author', 'body', 'body-tokens', 'body-words-length', 'word-freq' , '2-word phrases', '3-word phrases', 'relevancy'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
     articles = []
@@ -316,7 +324,9 @@ with requests.Session() as s:
       title = soup.find(attrs={'property':'og:title'}).get('content')
       article['title'] = title
 
-      abstract = soup.find(attrs={'property':'og:abstractription'}).get('content')
+      article['publisher'] = 'Open!'
+
+      abstract = soup.find(attrs={'property':'og:description'}).get('content')
       abstractlist = []
       article['abstract'] = abstract
 
@@ -350,7 +360,7 @@ with requests.Session() as s:
         for p in pp:
           for item in p:
             copy.append(item.text)
-        copy = "\n".join(copy)
+        copy = "\n\n\n\n".join(copy)
         article['body'] = copy
 
         words = text_cu(copy)
@@ -364,8 +374,8 @@ with requests.Session() as s:
 
         word_freq(article['body-tokens'])
 
-        phrases_freq(article['body-tokens'], 2)
-        phrases_freq(article['body-tokens'], 3)
+        # phrases_freq(article['body-tokens'], 2)
+        # phrases_freq(article['body-tokens'], 3)
 
         relevancy(article['word-freq'])
 
@@ -385,7 +395,7 @@ with requests.Session() as s:
 
     output = io.StringIO()
     f = csv.writer(open('dump/%s.csv' % filename, 'w'))
-    f.writerow(['mod', 'url', 'title', 'abstract', 'tags', 'author', 'body', 'body-tokens', 'body-wl', 'word-freq' , '2-word phrases', '3-word phrases', 'relevancy'])
+    f.writerow(['mod', 'url', 'title', 'abstract', 'tags', 'author', 'body', 'body-tokens', 'body-words-length', 'word-freq' , '2-word phrases', '3-word phrases', 'relevancy'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
     apis = {
@@ -564,7 +574,7 @@ with requests.Session() as s:
 
     output = io.StringIO()
     f = csv.writer(open('dump/%s.csv' % filename, 'w'))
-    f.writerow(['mod', 'url', 'title', 'abstract', 'tags', 'author', 'body', 'body-tokens', 'body-wl', 'word-freq' , '2-word phrases', '3-word phrases', 'relevancy'])
+    f.writerow(['mod', 'url', 'title', 'abstract', 'tags', 'author', 'body', 'body-tokens', 'body-words-length', 'word-freq' , '2-word phrases', '3-word phrases', 'relevancy'])
     writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
     osr = requests.get('http://openset.nl/reader/pocket/api/get.php?type=root&id=root')
