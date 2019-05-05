@@ -1,7 +1,5 @@
 import contractions
 import nltk
-
-
 from nltk.corpus import stopwords
 from nltk import ngrams, FreqDist
 import re
