@@ -1,16 +1,8 @@
 import sys
-import time
+
 import requests
 from bs4 import BeautifulSoup
 import pprint
-
-import nltk
-from nltk.stem import WordNetLemmatizer
-
-from text_processing import text_cu, stop_words, word_freq, phrases_freq, relevancy
-
-import io
-import csv
 
 import json
 import markdown
@@ -40,9 +32,6 @@ soup = BeautifulSoup(data, "lxml")
 url = []
 mod = []
 
-# add if to check if `lastmod` has changed from the value in the db
-
-# un-studio, check if page has `.com/zh/` or `.com/en/`
 for item in soup.find_all('loc'):
   url.append(item.text)
 
@@ -50,7 +39,6 @@ for item in soup.find_all('lastmod'):
   mod.append(item.text)
 
 index = dict(zip(mod, url))
-print(len(index))
 
 
 #---- generic scraping function
@@ -120,10 +108,10 @@ def scraper(name, article, articles):
     author = soup.find('p', class_ = classname)
 
     if (author != None):
-        if len(author.contents) > 0:
-          article['author'] = author.contents[0].text
-        else:
-          article['author'] = author.contents
+      if len(author.contents) > 0:
+        article['author'] = author.contents[0].text
+      else:
+        article['author'] = author.contents
     else:
       article['author'] = 'empty'
 
@@ -131,6 +119,7 @@ def scraper(name, article, articles):
     get_author('author-name')
   elif (name == 'online-open'):
     get_author('author')
+
 
   #-- section / category
   # if (name == 'amateurcities'):
@@ -163,42 +152,42 @@ def scraper(name, article, articles):
   #--- gone through all urls in sitemap
 
 
-def text_processing (article):
-  words = text_cu(article['body'])
-  words = nltk.word_tokenize(words)
+# def text_processing (article):
+#   words = text_cu(article['body'])
+#   words = nltk.word_tokenize(words)
 
-  lemmatizer = WordNetLemmatizer()
-  words = [lemmatizer.lemmatize(word) for word in words]
+#   lemmatizer = WordNetLemmatizer()
+#   words = [lemmatizer.lemmatize(word) for word in words]
 
-  stop_words(words, article)
+#   stop_words(words, article)
 
-  word_freq(article['body-tokens'], article)
+#   word_freq(article['body-tokens'], article)
 
-  phrases_freq(article['body-tokens'], 2, article)
-  phrases_freq(article['body-tokens'], 3, article)
+#   phrases_freq(article['body-tokens'], 2, article)
+#   phrases_freq(article['body-tokens'], 3, article)
 
-  relevancy(article['word-freq'], article)
+#   relevancy(article['word-freq'], article)
 
-  print('text processing done...')
+#   print('text processing done...')
 
 
-def save (article, articles):
-  name = names[sys.argv[1]]
-  timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-  filename = name + '_' + timestamp
+# def save (article, articles):
+#   name = names[sys.argv[1]]
+#   timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+#   filename = name + '_' + timestamp
 
-  output = io.StringIO()
+#   output = io.StringIO()
 
-  f = csv.writer(open('dump/%s.csv' % filename, 'w'))
-  f.writerow(['mod', 'url', 'title', 'publisher', 'abstract', 'tags', 'author', 'section', 'body', 'body-tokens', 'body-words-length', 'word-freq', '2-word phrases', '3-word phrases', 'relevancy'])
-  writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
+#   f = csv.writer(open('dump/%s.csv' % filename, 'w'))
+#   f.writerow(['mod', 'url', 'title', 'publisher', 'abstract', 'tags', 'author', 'section', 'body', 'body-tokens', 'body-words-length', 'word-freq', '2-word phrases', '3-word phrases', 'relevancy'])
+#   writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
-  f.writerow(article.values())
+#   f.writerow(article.values())
 
-  with open('dump/%s.json' % filename, 'w') as fp:
-    json.dump(articles, fp)
+#   with open('dump/%s.json' % filename, 'w') as fp:
+#     json.dump(articles, fp)
 
-  print('saving done...')
+#   print('saving done...')
 
 # + + + + +
 
@@ -214,58 +203,79 @@ with requests.Session() as s:
     # fetch data
     scraper(t_url, article, articles)
 
-    # do text processing
-    try:
-      text_processing(article)
-    except Exception:
-      print('article has empty body field')
-
-    # print('- - - - - -')
-    # print(article)
-    #-- do the saving here!
-
-  # save(article, articles)
-  # print(len(articles))
 
 
-  #------------
-  #--- open set
-  if(t_url == sitemap['os']):
 
-    apis = {
-      'project': 'http://hub.openset.nl/backend/wp-json/wp/v2/project',
-      'expert': 'http://hub.openset.nl/backend/wp-json/swp_api/search',
-      'categories': 'http://hub.openset.nl/backend/wp-json/wp/v2/categories',
+#------------
+#--- open set
+
+if(t_url == sitemap['os']):
+
+  apis = {
+    'sections': [
+      {
+        'type': 'project',
+        'url': 'http://hub.openset.nl/backend/wp-json/wp/v2/project',
+        'data': {}
+      },
+      {
+        'type': 'expertinput',
+        'url': 'http://hub.openset.nl/backend/wp-json/swp_api/search',
+        'data': {}
+      },
+    ],
+    'categories': {
+      'type': 'categories',
+      'url': 'http://hub.openset.nl/backend/wp-json/wp/v2/categories',
+      'data': {}
     }
+  }
 
-    rproj = requests.get(apis['project'])
-    projdata = rproj.json()
+  projdata = requests.get(apis['sections'][0]['url']).json()
+  expsdata = requests.get(apis['sections'][1]['url']).json()
+  catdata  = requests.get(apis['categories']['url']).json()
 
-    rexps = requests.get(apis['expert'])
-    expsdata = rexps.json()
+  def getData(item):
+    item['data'] = requests.get(item['url']).json()
 
-    rcat = requests.get(apis['categories'])
-    catdata = rcat.json()
+  for item in apis['sections']:
+    getData(item)
 
-    projects = []
 
-    for project in projdata:
-      article = {}
+  # open-set generic scraper
+  # ------------------------
+  def os_scraper(section):
+    article = {}
 
-      article['mod'] = project['modified_gmt']
-      article['url'] = 'http://hub.openset.nl/' + project['type'] + '/' + project['slug']
+    for item in section['data']:
+      article['mod'] = item['modified_gmt']
+      article['url'] = 'http://hub.openset.nl/' + section['type'] + '/' + item['slug']
       print(article['url'])
 
-      article['title'] = project['title']['rendered']
-      article['abstract'] = 'None'
+      article['title'] = item['title']['rendered']
 
-      # look up categories
-      for cat in catdata:
-        if(len(project['categories']) > 0):
-          if (cat['id'] == project['categories'][0]):
+      def getText(text):
+        arr = []
+        soup = BeautifulSoup(text, 'lxml')
+        for p in soup:
+          arr.append(p.text)
+
+        return "\n".join(arr)
+
+      try:
+        abstract = getText(item['excerpt']['rendered'])
+        article['abstract'] = abstract
+      except:
+        article['abstract'] = 'None'
+
+      # categories
+      for cat in apis['categories']['data']:
+        if(len(item['categories']) > 0):
+          if (cat['id'] == item['categories'][0]):
             article['tags'] = cat['name']
 
-      names = project['acf']['student_name']
+      # authors
+      names = item['acf']['student_name']
       names = list(map(str.strip, names.split(',')))
       names = list(enumerate(names))
 
