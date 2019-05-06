@@ -286,115 +286,89 @@ if(t_url == sitemap['os']):
 
       article['author'] = authors
 
-      textual = []
-      texts = project['acf']
-      for k, v in texts.items():
-        if 'textual' in k:
-          textual.append(v)
 
-      copy = []
-      for text in textual:
-        for block in text:
-          for k, v in block.items():
-            if k == 'text_content':
-              copy.append(v)
+      #------
+      def get_copy(data, key, arr):
+        for k, v in data.items():
+          if key in k:
+            arr.append(v)
+      #------
 
-      soup = []
-      for p in copy:
-        soup.append(BeautifulSoup(p, 'lxml'))
+      # copy
+      try:
+        article['body'] = getText(item['content']['rendered'])
+      except:
+        textual = []
+        get_copy(item['acf'], 'textual', textual)
 
-      body = []
-      for p in soup:
-        body.append(p.text)
+        copy = []
+        for text in textual:
+          for block in text:
+            get_copy(block, 'text_content', copy)
 
-      body = "\n".join(body)
-      article['body'] = body
+        soup = []
+        for p in copy:
+          soup.append(BeautifulSoup(p, 'lxml'))
 
-
-    for ex in expsdata:
-      article = {}
-
-      article['mod'] = ex['modified_gmt']
-      article['url'] = 'http://hub.openset.nl/' + 'expertinput/' + ex['slug']
-      print(article['url'])
-
-      article['title'] = ex['title']['rendered']
-
-      def getText(text):
-        arr = []
-        soup = BeautifulSoup(text, 'lxml')
+        body = []
         for p in soup:
-          arr.append(p.text)
+          body.append(p.text)
 
-        arr = "\n".join(arr)
-        return arr
+        body = "\n".join(body)
+        article['body'] = body
 
-      abstract = getText(ex['excerpt']['rendered'])
-
-      article['abstract'] = abstract
-
-      # look up categories
-      for cat in catdata:
-        if(len(ex['categories']) > 0):
-          if (cat['id'] == ex['categories'][0]):
-            article['tags'] = cat['name']
-
-      # authors
-      names = ex['acf']['student_name']
-      names = list(map(str.strip, names.split(',')))
-      names = list(enumerate(names))
-
-      authors = []
-      for name in names:
-        if (name[0] %2 == 0):
-          authors.append(name[1])
-
-      article['author'] = authors
-
-      #-- copy
-      copy = getText(ex['content']['rendered'])
-      article['body'] = copy
+      #---
+      articles.append(article)
 
 
-  elif(t_url == sitemap['osr']):
-    osr = requests.get('http://openset.nl/reader/pocket/api/get.php?type=root&id=root')
-    data = osr.json()
+  articles = []
 
-    obj = data['_pocketjoins']['map']
+  for item in apis['sections']:
+    os_scraper(item)
 
-    index = []
-    for item in obj:
-      for entry in item['_pocketjoins']['map']:
-        if (entry['publish'] == True):
-          index.append(entry['_pocketindex'])
+  print(len(articles))
 
-    articles = []
-    for slug in index:
-      art = s.get('http://openset.nl/reader/pocket/api/get.php?type=articles&id=' + slug)
-      entry = art.json()
-      print(slug)
 
-      article = {}
+#---- osr
 
-      article['mod'] = 'empty'
-      article['url'] = 'http://openset.nl/reader/#!/article/' + slug
+elif(t_url == sitemap['osr']):
+  data = requests.get('http://openset.nl/reader/pocket/api/get.php?type=root&id=root').json()
+  obj = data['_pocketjoins']['map']
 
-      article['title'] = entry['title']
-      article['abstract'] = 'empty'
+  index = []
+  for item in obj:
+    for entry in item['_pocketjoins']['map']:
+      if (entry['publish'] == True):
+        index.append(entry['_pocketindex'])
 
-      article['tags'] = 'empty'
-      article['author'] = entry['author']
+  articles = []
+  for slug in index:
+    art = s.get('http://openset.nl/reader/pocket/api/get.php?type=articles&id=' + slug)
+    entry = art.json()
+    print(slug)
 
-      copy = []
-      for block in entry['text']:
-        for k,v in block.items():
-          if (k == 'content'):
-            rv = markdown.markdown(v)
-            hv = BeautifulSoup(rv, 'lxml')
-            copy.append(hv.text)
+    article = {}
 
-      copy = "".join(copy)
-      article['body'] = copy
+    article['mod'] = 'empty'
+    article['url'] = 'http://openset.nl/reader/#!/article/' + slug
 
-  # -- end 
-  print('scraping completed!!')
+    article['title'] = entry['title']
+    article['abstract'] = 'empty'
+
+    article['tags'] = 'empty'
+    article['author'] = entry['author']
+
+    copy = []
+    for block in entry['text']:
+      for k,v in block.items():
+        if (k == 'content'):
+          rv = markdown.markdown(v)
+          hv = BeautifulSoup(rv, 'lxml')
+          copy.append(hv.text)
+
+    copy = ''.join(copy)
+    article['body'] = copy
+
+
+#-- end 
+# print('scraping completed!!')
