@@ -42,12 +42,12 @@ def main(name):
     return article
 
   try:
-    text_processing(article)
+    article = text_processing(article)
   except:
     print('article has no `body` field')
 
   #-- save it to db
-  def save (article, articles):
+  def save (article):
     name = names[sys.argv[1]]
     timestamp = time.strftime("%Y-%m-%d-%H%M%S")
     filename = name + '_' + timestamp
@@ -61,7 +61,7 @@ def main(name):
     f.writerow(article.values())
 
     with open('dump/%s.json' % filename, 'w') as fp:
-      json.dump(articles, fp)
+      json.dump(article, fp)
 
     print('saving done...')
 
