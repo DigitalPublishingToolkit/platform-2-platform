@@ -57,6 +57,27 @@ def main(name):
     'osr': 'http://openset.nl/reader/pocket/api/get.php?type=root&id=root'
   }
 
+  #-- open-set apis
+  apis = {
+    'sections': [
+      {
+        'type': 'project',
+        'url': 'http://hub.openset.nl/backend/wp-json/wp/v2/project',
+        'data': {}
+      },
+      {
+        'type': 'expertinput',
+        'url': 'http://hub.openset.nl/backend/wp-json/swp_api/search',
+        'data': {}
+      },
+    ],
+    'categories': {
+      'type': 'categories',
+      'url': 'http://hub.openset.nl/backend/wp-json/wp/v2/categories',
+      'data': {}
+    }
+  }
+
   names = {
     'ac': 'amateurcities',
     'oo': 'online-open',
@@ -111,9 +132,26 @@ def main(name):
         save(article)
 
     # os
-    elif (t_url == 'os'):
-      for item in apis['sections']:
-        os_scraper.scraper(item)
+    elif (name == 'os'):
+      # feed `apis[item.data{}]` w/ data
+      def getData(item):
+        item['data'] = requests.get(item['url']).json()
+
+      # 1. scrape
+      for section in apis['sections']:
+        getData(section)
+
+        for item in section['data']:
+          os_scraper.scraper(section, item, apis, article)
+
+          # 2. process
+          try:
+            article = text_processing(article)
+          except:
+            print('article has no `body` field')
+
+          # 3. save to db
+          save(article)
 
 if __name__ == '__main__':
   main(sys.argv[1])
