@@ -100,6 +100,5 @@ def scraper(s, mod, url, name, article):
     article['body'] = None
 
 
-  # print(article)
   print('scraping done...')
   return article

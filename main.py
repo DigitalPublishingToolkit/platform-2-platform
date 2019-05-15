@@ -4,11 +4,10 @@ import time
 import requests
 from bs4 import BeautifulSoup
 import json
-import markdown
 
-import acoo_scraper
-import os_scraper
-import osr_scraper
+import ac_oo
+import os
+import osr
 
 from text_processing import text_cu, stop_words, word_freq, phrases_freq, relevancy
 import nltk
@@ -120,7 +119,7 @@ def main(name):
     if (name == 'ac' or name == 'oo'):
       for mod, url in index.items():
         # 1. scrape
-        acoo_scraper.scraper(s, mod, url, names[name], article)
+        ac_oo.scraper(s, mod, url, names[name], article)
 
         # 2. process
         try:
@@ -142,7 +141,7 @@ def main(name):
         getData(section)
 
         for item in section['data']:
-          os_scraper.scraper(section, item, apis, article)
+          os.scraper(section, item, apis, article)
 
           # 2. process
           try:
@@ -152,6 +151,28 @@ def main(name):
 
           # 3. save to db
           save(article)
+
+    elif (name == 'osr'):
+      data = requests.get('http://openset.nl/reader/pocket/api/get.php?type=root&id=root').json()
+      obj = data['_pocketjoins']['map']
+
+      index = []
+      for item in obj:
+        for entry in item['_pocketjoins']['map']:
+          if (entry['publish'] == True):
+            index.append(entry['_pocketindex'])
+
+      for slug in index:
+        osr.scraper(s, slug, article)
+
+        # 2. process
+        try:
+          article = text_processing(article)
+        except:
+          print('article has no `body` field')
+
+        # 3. save to db
+        save(article)
 
 if __name__ == '__main__':
   main(sys.argv[1])

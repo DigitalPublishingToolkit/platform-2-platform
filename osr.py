@@ -29,5 +29,6 @@ def scraper(s, slug, article):
   copy = ''.join(copy)
   article['body'] = copy
 
+  # print(article)
   print('scraping done...')
   return article

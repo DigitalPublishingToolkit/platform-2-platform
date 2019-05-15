@@ -71,6 +71,5 @@ def scraper(section, item, apis, article):
     article['body'] = body
 
 
-  # print(article)
   print('scraping done...')
   return article
