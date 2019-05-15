@@ -2,7 +2,7 @@ import sys
 from bs4 import BeautifulSoup
 
 #---- ac / oo scraping function
-def ac_oo_scraper(s, mod, url, name, article):
+def scraper(s, mod, url, name, article):
   art = s.get(url, allow_redirects=False)
   print(url)
 

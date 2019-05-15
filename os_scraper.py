@@ -32,7 +32,7 @@ for item in apis['sections']:
 
 # open-set scraper
 # ----------------
-def os_scraper(section):
+def scraper(section):
   article = {}
 
   for item in section['data']:

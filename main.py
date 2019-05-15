@@ -6,11 +6,10 @@ from bs4 import BeautifulSoup
 import json
 import markdown
 
-from acoo_scraper import ac_oo_scraper
+import acoo_scraper
 import os_scraper
 import osr_scraper
 
-from scraper import scrapple
 from text_processing import text_cu, stop_words, word_freq, phrases_freq, relevancy
 import nltk
 from nltk.stem import WordNetLemmatizer
@@ -100,8 +99,7 @@ def main(name):
     if (name == 'ac' or name == 'oo'):
       for mod, url in index.items():
         # 1. scrape
-        ac_oo_scraper(s, mod, url, names[name], article)
-        print('scraping completed!!')
+        acoo_scraper.scraper(s, mod, url, names[name], article)
 
         # 2. process
         try:
@@ -115,7 +113,7 @@ def main(name):
     # os
     elif (t_url == 'os'):
       for item in apis['sections']:
-        os_scraper(item)
+        os_scraper.scraper(item)
 
 if __name__ == '__main__':
   main(sys.argv[1])
