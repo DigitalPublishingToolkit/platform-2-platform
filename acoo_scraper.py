@@ -1,7 +1,7 @@
+#---- ac / oo
 import sys
 from bs4 import BeautifulSoup
 
-#---- ac / oo scraping function
 def scraper(s, mod, url, name, article):
   art = s.get(url, allow_redirects=False)
   print(url)
@@ -99,7 +99,7 @@ def scraper(s, mod, url, name, article):
   else:
     article['body'] = None
 
+
   # print(article)
   print('scraping done...')
-
   return article
