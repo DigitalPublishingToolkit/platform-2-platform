@@ -19,8 +19,7 @@ import csv
 
 def main(name):
   #-- scrape article
-  articles = scrapple(name)
-  print(name, 'articles length →', len(articles))
+  article = scrapple(name)
 
   #-- shape data up
   def text_processing (article):
@@ -42,11 +41,10 @@ def main(name):
     print('text processing done...')
     return article
 
-  for article in articles:
-    try:
-      text_processing(article)
-    except:
-      print('article has no `body` field')
+  try:
+    text_processing(article)
+  except:
+    print('article has no `body` field')
 
   #-- save it to db
   def save (article, articles):

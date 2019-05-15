@@ -2,9 +2,7 @@ import sys
 from bs4 import BeautifulSoup
 
 #---- ac / oo scraping function
-def ac_oo_scraper(s, mod, url, name, articles):
-  article = {}
-
+def ac_oo_scraper(s, mod, url, name, article):
   art = s.get(url, allow_redirects=False)
   print(url)
 
@@ -101,7 +99,7 @@ def ac_oo_scraper(s, mod, url, name, articles):
   else:
     article['body'] = None
 
-  print(article)
+  # print(article)
   print('scraping done...')
 
-  articles.append(article)
+  return article

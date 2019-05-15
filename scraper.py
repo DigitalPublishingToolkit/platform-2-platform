@@ -16,32 +16,31 @@ def scrapple (name):
     'os': 'http://hub.openset.nl/backend/wp-json',
     'osr': 'http://openset.nl/reader/pocket/api/get.php?type=root&id=root'
   }
-  
+
   names = {
     'ac': 'amateurcities',
     'oo': 'online-open',
     'os': 'openset',
     'osr': 'openset-reader'
   }
-  
-  # name = sys.argv[1]
+
   t_url = sitemap[name]
   r = requests.get(t_url)
   data = r.text
-  
+
   #-- make dict with { <lastmod>: <url> }
   soup = BeautifulSoup(data, "lxml")
-  
+
   url = []
   mod = []
-  
+
   def sitemap (data, key, arr):
     for item in data.find_all(key):
       arr.append(item.text)
-  
+
   sitemap(soup, 'loc', url)
   sitemap(soup, 'lastmod', mod)
-  
+
   index = dict(zip(mod, url))
 
   #-- TODO compare sitemap with db
@@ -53,18 +52,18 @@ def scrapple (name):
   #--- scraping
   with requests.Session() as s:
     print('scraping ✂︎')
-  
-    articles = []
+
+    article = {}
     # go through each link in sitemap
     if (name == 'ac' or name == 'oo'):
       for mod, url in index.items():
-        ac_oo_scraper(s, mod, url, names[name], articles)
-  
+        ac_oo_scraper(s, mod, url, names[name], article)
+
     elif (t_url == 'os'):
       for item in apis['sections']:
         os_scraper(item)
-  
-  
+
+
     #-- end
     print('scraping completed!!')
-    return articles
+    return article
