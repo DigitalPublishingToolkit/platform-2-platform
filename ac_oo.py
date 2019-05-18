@@ -1,5 +1,6 @@
 #---- ac / oo
 import sys
+import ciso8601
 from bs4 import BeautifulSoup
 
 def scraper(s, mod, url, name, article):
@@ -9,7 +10,7 @@ def scraper(s, mod, url, name, article):
   soup = BeautifulSoup(art.text, 'lxml')
 
   #-- mod + url
-  article['mod'] = mod
+  article['mod'] = ciso8601.parse_datetime(mod)
   article['url'] = url
 
   #-- title

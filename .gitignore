@@ -4,3 +4,4 @@ dump.rdb
 share/
 dump/
 env/
+db.ini

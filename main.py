@@ -13,6 +13,10 @@ from text_processing import text_cu, stop_words, word_freq, phrases_freq, releva
 import nltk
 from nltk.stem import WordNetLemmatizer
 
+import psycopg2
+from psycopg2 import sql
+from config import config
+
 #----
 # run scraper with list of urls to check for scraping
 # - read urls from db
@@ -41,12 +45,41 @@ def text_processing (article):
   print('text processing done...')
   return article
 
+
 #-- save data to db
 def save (article):
-  timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-  print(article)
-  print('saving done...')
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
 
+    # cur.execute(
+    #   sql.SQL("INSERT INTO {} VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
+    #     .format(sql.Identifier('scraper')),
+    #   [article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body']])
+
+    cur.execute(
+        """
+        INSERT INTO scraper (mod, url, title, publisher, abstract, tags, author, body)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+        """,
+        (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'])
+    )
+
+    conn.commit()
+    cur.close()
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print(error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
+
+#-- main
 def main(name):
   #-- get sitemap
   sitemap = {
