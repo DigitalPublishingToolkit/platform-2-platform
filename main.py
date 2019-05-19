@@ -46,19 +46,14 @@ def text_processing (article):
   return article
 
 
-#-- save data to db
-def save (article):
+#-- save scraped data to db
+def save_scrape (article):
   conn = None
   try:
     params = config()
     print('connecting to db...')
     conn = psycopg2.connect(**params)
     cur = conn.cursor()
-
-    # cur.execute(
-    #   sql.SQL("INSERT INTO {} VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
-    #     .format(sql.Identifier('scraper')),
-    #   [article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body']])
 
     cur.execute(
         """
@@ -154,6 +149,8 @@ def main(name):
         # 1. scrape
         ac_oo.scraper(s, mod, url, names[name], article)
 
+        save_scrape(article)
+
         # 2. process
         try:
           article = text_processing(article)
@@ -161,7 +158,6 @@ def main(name):
           print('article has no `body` field')
 
         # 3. save to db
-        save(article)
 
     # os
     elif (name == 'os'):
