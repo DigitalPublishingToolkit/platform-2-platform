@@ -9,6 +9,9 @@ def scraper(section, item, apis, article):
 
   article['title'] = item['title']['rendered']
 
+  #-- publisher
+  article['publisher'] = 'open-set'
+
   #-- abstract
   def getText(text):
     arr = []
@@ -24,11 +27,14 @@ def scraper(section, item, apis, article):
   except:
     article['abstract'] = 'None'
 
-  #-- categories
+  #-- tags
+  taglist = []
   for cat in apis['categories']['data']:
     if(len(item['categories']) > 0):
       if (cat['id'] == item['categories'][0]):
-        article['tags'] = cat['name']
+        taglist.append(cat['name'])
+
+  article['tags'] = taglist
 
   #-- authors
   names = item['acf']['student_name']

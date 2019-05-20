@@ -6,16 +6,14 @@ from bs4 import BeautifulSoup
 import json
 
 import ac_oo
-import os
+import oss
 import osr
 
 from text_processing import text_cu, stop_words, word_freq, phrases_freq, relevancy
 import nltk
 from nltk.stem import WordNetLemmatizer
 
-import psycopg2
-from psycopg2 import sql
-from config import config
+import save_to_db
 
 #----
 # run scraper with list of urls to check for scraping
@@ -44,34 +42,6 @@ def text_processing (article):
 
   print('text processing done...')
   return article
-
-
-#-- save scraped data to db
-def save_scrape (article):
-  conn = None
-  try:
-    params = config()
-    print('connecting to db...')
-    conn = psycopg2.connect(**params)
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        INSERT INTO scraper (mod, url, title, publisher, abstract, tags, author, body)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
-        """,
-        (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'])
-    )
-
-    conn.commit()
-    cur.close()
-
-  except (Exception, psycopg2.DatabaseError) as error:
-    print(error)
-  finally:
-    if conn is not None:
-      conn.close()
-      print('db connection closed')
 
 
 #-- main
@@ -148,16 +118,16 @@ def main(name):
       for mod, url in index.items():
         # 1. scrape
         ac_oo.scraper(s, mod, url, names[name], article)
-
-        save_scrape(article)
+        save_to_db.scrape(article)
 
         # 2. process
         try:
           article = text_processing(article)
-        except:
-          print('article has no `body` field')
+        except Exception as e:
+          print(e)
 
         # 3. save to db
+
 
     # os
     elif (name == 'os'):
@@ -165,21 +135,25 @@ def main(name):
       def getData(item):
         item['data'] = requests.get(item['url']).json()
 
+      catdata = getData(apis['categories'])
+
       # 1. scrape
       for section in apis['sections']:
         getData(section)
 
         for item in section['data']:
-          os.scraper(section, item, apis, article)
+          oss.scraper(section, item, apis, article)
+          # print(article)
+          save_to_db.scrape(article)
 
           # 2. process
           try:
             article = text_processing(article)
-          except:
-            print('article has no `body` field')
+          except Exception as e:
+            print(e)
 
           # 3. save to db
-          save(article)
+
 
     elif (name == 'osr'):
       data = requests.get('http://openset.nl/reader/pocket/api/get.php?type=root&id=root').json()
@@ -193,15 +167,15 @@ def main(name):
 
       for slug in index:
         osr.scraper(s, slug, article)
+        save_to_db.scrape(article)
 
         # 2. process
         try:
           article = text_processing(article)
-        except:
-          print('article has no `body` field')
+        except Exception as e:
+          print(e)
 
         # 3. save to db
-        save(article)
 
 if __name__ == '__main__':
   main(sys.argv[1])
