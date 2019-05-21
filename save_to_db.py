@@ -136,3 +136,26 @@ def three_word_freq (article):
     if conn is not None:
       conn.close()
       print('db connection closed')
+
+
+#-- get data back (`body` from current publisher)
+def get_body(publisher):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    cur.execute("SELECT DISTINCT body FROM scraper WHERE publisher = %s;", (publisher,))
+    body = cur.fetchall()
+
+    cur.close()
+    return body
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')

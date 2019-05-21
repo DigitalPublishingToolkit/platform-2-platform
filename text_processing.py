@@ -15,6 +15,7 @@ def text_cu (text):
 
   return text
 
+
 #-- stop-words
 def stop_words (text, article):
   sw = set(stopwords.words('english'))
@@ -27,9 +28,8 @@ def stop_words (text, article):
     else:
       wordsclean.append(w)
 
-  article['body-tokens'] = wordsclean
-  article['body-words-length'] = len(wordsclean)
-  # article['stop-words'] = stop_words
+  return wordsclean
+
 
 #-- word-frequency
 def word_freq (text, article):
@@ -37,11 +37,12 @@ def word_freq (text, article):
   wf = FreqDist(text)
   for word, freq in wf.most_common():
     # (word-frequency / body-tokens-length ) * 100
-    rel = (freq / len(article['body-tokens'])) * 100
+    rel = (freq / len(text)) * 100
     wwf = word, freq, rel
     wordfreq.append(wwf)
 
   article['word-freq'] = wordfreq
+
 
 #-- n-word phrases frequency
 def phrases_freq (text, size, article):
@@ -49,6 +50,7 @@ def phrases_freq (text, size, article):
   pf = FreqDist(ngrams(text, size))
 
   article[str(size) + 'w-phrases'] = pf.most_common()
+
 
 def relevancy (word_freq, article):
   relevancy = 0

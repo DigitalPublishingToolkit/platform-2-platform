@@ -13,6 +13,7 @@ import nltk
 from nltk.stem import WordNetLemmatizer
 
 import save_to_db
+import save_to_json
 
 #----
 # run scraper with list of urls to check for scraping
@@ -24,13 +25,16 @@ import save_to_db
 
 #-- shape data up
 def text_processing (article):
-  words = text_cu(article['body'])
+  corpus = '\n\n\n\n'.join([article['title'], article['abstract'], article['body']])
+  words = text_cu(corpus)
   words = nltk.word_tokenize(words)
 
-  lemmatizer = WordNetLemmatizer()
-  words = [lemmatizer.lemmatize(word) for word in words]
+  #-- produces random syllabes
+  # lemmatizer = WordNetLemmatizer()
+  # words = [lemmatizer.lemmatize(word) for word in words]
 
-  stop_words(words, article)
+  article['body-tokens'] = stop_words(words, article)
+  article['body-words-length'] = len(article['body-tokens'])
 
   word_freq(article['body-tokens'], article)
 
@@ -110,22 +114,42 @@ def main(name):
   with requests.Session() as s:
     print('scraping ✂︎')
 
-    article = {}
+    articles = []
+    # article = {}
+
     #-- go through each link in sitemap
     # ac / oo
     if (name == 'ac' or name == 'oo'):
       for mod, url in index.items():
+        article = {}
+
         # 1. scrape
         ac_oo.scraper(s, mod, url, names[name], article)
-        save_to_db.scrape(article)
+
+        articles.append(article)
+
+      save_to_json.store(name, articles)
+
+        # save_to_db.scrape(article)
+
+        # if (name == 'ac'):
+        #   pub = 'amateurcities'
+        # else:
+        #   pub: 'online-open'
+
+        # article_bd = save_to_db.get_body(pub)
 
         # 2. process
-        try:
-          article = text_processing(article)
-        except Exception as e:
-          print(e)
+        # try:
+        #   article = text_processing(article)
+        # except Exception as e:
+        #   print('text-processing:', e)
 
-        # 3. save to db
+        # articles.append(article)
+
+
+      # 4. save to json-file
+      # save_to_json.dump(name, articles)
 
 
     # os
@@ -140,18 +164,25 @@ def main(name):
       for section in apis['sections']:
         getData(section)
 
+        article = {}
+
         for item in section['data']:
           oss.scraper(section, item, apis, article)
-          # print(article)
-          save_to_db.scrape(article)
+          # save_to_db.scrape(article)
+          articles.append(article)
+
+        save_to_json.store(name, articles)
 
           # 2. process
-          try:
-            article = text_processing(article)
-          except Exception as e:
-            print(e)
+          # try:
+          #   article = text_processing(article)
+          # except Exception as e:
+          #   print(e)
 
-          # 3. save to db
+          # articles.append(article)
+
+      # 4. save to json-file
+      # save_to_json.dump(name, articles)
 
 
     elif (name == 'osr'):
@@ -164,17 +195,28 @@ def main(name):
           if (entry['publish'] == True):
             index.append(entry['_pocketindex'])
 
+      # 1. scrape
       for slug in index:
+        article = {}
+
         osr.scraper(s, slug, article)
-        save_to_db.scrape(article)
+        # save_to_db.scrape(article)
+
+        articles.append(article)
+
+      save_to_json.store(name, articles)
 
         # 2. process
-        try:
-          article = text_processing(article)
-        except Exception as e:
-          print(e)
+        # try:
+        #   article = text_processing(article)
+        # except Exception as e:
+        #   print(e)
 
-        # 3. save to db
+
+        # articles.append(article)
+
+      # 4. save to json-file
+      # save_to_json.dump(name, articles)
 
 if __name__ == '__main__':
   main(sys.argv[1])
