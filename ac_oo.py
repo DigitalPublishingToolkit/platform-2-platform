@@ -33,6 +33,8 @@ def scraper(s, mod, url, name, article):
   abstract = soup.find(attrs={'property':'og:description'})
   if (abstract != None):
     article['abstract'] = abstract.get('content')
+  else:
+    article['abstract'] = ''
 
   #-- tags
   def get_tags(tags):
@@ -88,19 +90,43 @@ def scraper(s, mod, url, name, article):
   #-- copy
   if (name == 'amateurcities'):
     body = soup.find('article')
+    if body is None:
+      body = soup.find('section')
+
+    if (body != None):
+      try:
+        pp = body.find_all('p')
+        copy = []
+        for p in pp:
+          copy.append(p.text)
+        copy = "\n\n\n\n".join(copy)
+        article['body'] = copy
+      except Exception as e:
+        print('body parser', e)
+    else:
+      article['body'] = ''
+
   elif (name == 'online-open'):
-    body = soup.find('div', id='text').select('.contentCluster')[0]
+    body = soup.find('div', id='text').select('.contentCluster')
 
-  if (body != None):
-    pp = body.find_all('p')
-    copy = []
-    for p in pp:
-      copy.append(p.text)
-    copy = "\n\n\n\n".join(copy)
-    article['body'] = copy
-  else:
-    article['body'] = None
+    if (body != None):
+      try:
+        pp = []
+        for block in body:
+          item = block.find_all('p')
+          if (item != None):
+            pp.append(item)
 
+        copy = []
+        for p in pp:
+          for item in p:
+            copy.append(item.text)
+        copy = "\n\n\n\n".join(copy)
+        article['body'] = copy
+      except Exception as e:
+        print('body parser', e)
+    else:
+      article['body'] = ''
 
   print('scraping done...')
   return article
