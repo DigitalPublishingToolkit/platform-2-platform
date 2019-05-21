@@ -3,5 +3,6 @@ __pycache__
 dump.rdb
 share/
 dump/
+store/
 env/
 db.ini
