@@ -1,9 +1,11 @@
 #--- open-set
 import requests
+import ciso8601
 from bs4 import BeautifulSoup
 
 def scraper(section, item, apis, article):
-  article['mod'] = item['modified_gmt']
+  # article['mod'] =  ciso8601.parse_datetime(item['modified_gmt'])
+  article['mod'] =  item['modified_gmt']
   article['url'] = 'http://hub.openset.nl/' + section['type'] + '/' + item['slug']
   print(article['url'])
 

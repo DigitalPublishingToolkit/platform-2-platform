@@ -10,7 +10,8 @@ def scraper(s, mod, url, name, article):
   soup = BeautifulSoup(art.text, 'lxml')
 
   #-- mod + url
-  article['mod'] = ciso8601.parse_datetime(mod)
+  # article['mod'] = ciso8601.parse_datetime(mod)
+  article['mod'] = mod
   article['url'] = url
 
   #-- title
