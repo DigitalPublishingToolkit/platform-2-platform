@@ -1,7 +1,7 @@
 import contractions
 import nltk
 from nltk.corpus import stopwords
-from nltk import ngrams, FreqDist
+from nltk import ngrams, FreqDist, pos_tag
 import re
 
 #-- text-clean-up
@@ -31,14 +31,27 @@ def stop_words (text, article):
   return wordsclean
 
 
+def pos (corpus, article):
+  tk = pos_tag(corpus)
+  words = []
+  for word, code in tk:
+    if (code != 'RB'):
+      words.append(word)
+
+  return words
+
 #-- word-frequency
-def word_freq (text, article):
+def word_freq (corpus, article):
   wordfreq = []
-  wf = FreqDist(text)
+  wf = FreqDist(corpus)
+
   for word, freq in wf.most_common():
+    # print(word, freq)
+
     # (word-frequency / body-tokens-length ) * 100
-    rel = (freq / len(text)) * 100
+    rel = (freq / len(corpus)) * 100
     wwf = word, freq, rel
+
     wordfreq.append(wwf)
 
   article['word-freq'] = wordfreq
