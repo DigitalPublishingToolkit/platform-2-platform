@@ -106,9 +106,8 @@ def main(name):
 
   #-- compare sitemap with db
   # for mod, url in index.items():
-  #   if url is not in db.xx.url:
-  #     if mod > db.xx.date
-  #       → do scrape()
+  #   if url is not in db.xx.url AND if mod > db.xx.date:
+  #     → do scrape()
 
   #--- scraping + processing + saving
   with requests.Session() as s:
