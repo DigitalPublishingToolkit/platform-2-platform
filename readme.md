@@ -15,3 +15,22 @@ We're re-creating a web-ring on a bigger-scale.
 2. python text processing
 3. data saved to postgresql database
 4. javascript script embedded in each journal website, to talk between journal and database
+
+## Scraper
+
+To fetch articles from one of the three websites, eg Amateur Cities, do:
+
+```
+$ python main.py ac sc
+```
+
+the `sc` flag stands for *scrape*. there is another flag so far, `tx` to do text-processing.
+
+- scrape, `sc`
+- text-processing
+
+- Amateur Cities, `ac`
+- Online Open!, `oo`
+- Open Set, `os`
+- Open Set Reader, `osr`
+
