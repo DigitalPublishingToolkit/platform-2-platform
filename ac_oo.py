@@ -1,5 +1,4 @@
 #---- ac / oo
-import sys
 import ciso8601
 from bs4 import BeautifulSoup
 
@@ -10,28 +9,27 @@ def scraper(s, mod, url, name, article):
   soup = BeautifulSoup(art.text, 'lxml')
 
   #-- mod + url
-  # article['mod'] = ciso8601.parse_datetime(mod)
-  article['mod'] = mod
+  article['mod'] = ciso8601.parse_datetime(mod).isoformat()
   article['url'] = url
 
   #-- title
   if (name == 'online-open'):
-    title = soup.find(attrs={'property':'og:title'}).get('content')
+    title = soup.find(attrs={'property': 'og:title'}).get('content')
 
   try:
     title = soup.find('title').text
   except AttributeError:
     title = soup.find('title')
 
-  if (title != None):
+  if title is not None:
     article['title'] = title
 
   #-- publisher
   article['publisher'] = name
 
   #-- abstract
-  abstract = soup.find(attrs={'property':'og:description'})
-  if (abstract != None):
+  abstract = soup.find(attrs={'property': 'og:description'})
+  if abstract is not None:
     article['abstract'] = abstract.get('content')
   else:
     article['abstract'] = ''
@@ -54,18 +52,21 @@ def scraper(s, mod, url, name, article):
     article['tags'] = taglist
 
   if (name == 'amateurcities'):
-    tags = soup.find_all(attrs={'property':'article:tag'})
+    tags = soup.find_all(attrs={'property': 'article:tag'})
     get_tags(tags)
 
   elif (name == 'online-open'):
-    tags = soup.find(attrs={'name':'keywords'}).get('content').split(',')
+    tags = soup.find(attrs={'name': 'keywords'}).get('content').split(',')
+    get_tags(tags)
+  elif (name == 'kirby-kit'):
+    tags = soup.find('p', class_='note-tags tags')
     get_tags(tags)
 
   #-- author
   def get_author(classname):
-    author = soup.find('p', class_ = classname)
+    author = soup.find('p', class_=classname)
 
-    if (author != None):
+    if author is not None:
       if len(author.contents) > 0:
         article['author'] = author.contents[0].text
       else:
@@ -77,11 +78,13 @@ def scraper(s, mod, url, name, article):
     get_author('author-name')
   elif (name == 'online-open'):
     get_author('author')
+  elif (name == 'kirby-kit'):
+    get_author('logo')
 
   #-- section / category
   if (name == 'amateurcities'):
-    section = soup.find(attrs={'property':'article:section'})
-    if (section != None):
+    section = soup.find(attrs={'property': 'article:section'})
+    if section is not None:
       section = section.get('content')
       article['section'] = section
     else:
@@ -93,7 +96,7 @@ def scraper(s, mod, url, name, article):
     if body is None:
       body = soup.find('section')
 
-    if (body != None):
+    if body is not None:
       try:
         pp = body.find_all('p')
         copy = []
@@ -109,12 +112,12 @@ def scraper(s, mod, url, name, article):
   elif (name == 'online-open'):
     body = soup.find('div', id='text').select('.contentCluster')
 
-    if (body != None):
+    if body is not None:
       try:
         pp = []
         for block in body:
           item = block.find_all('p')
-          if (item != None):
+          if item is not None:
             pp.append(item)
 
         copy = []
@@ -127,6 +130,8 @@ def scraper(s, mod, url, name, article):
         print('body parser', e)
     else:
       article['body'] = ''
+  else:
+    article['body'] = ''
 
   print('scraping done...')
   return article
