@@ -12,8 +12,8 @@ contractions = "*"
 lxml = "*"
 markdown = "*"
 nltk = "*"
-psycopg2 = "*"
 requests = "*"
+psycopg2-binary = "*"
 
 [requires]
 python_version = "3.7"
