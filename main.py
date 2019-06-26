@@ -85,45 +85,55 @@ def main(name, articles):
 
     url = []
     mod = []
-
     sitemap(soup, 'loc', url)
     sitemap(soup, 'lastmod', mod)
 
     mod = [ciso8601.parse_datetime(mod).isoformat() for mod in mod]
     last_mod = dict(zip(mod, url))
 
-    datb_mod = save_to_db.get_mod(names[name])
-    print(datb_mod)
+    publisher = names[name]
+    datb_mod = save_to_db.get_mod(publisher)
 
     # compare mod from db w/ mod from fresh scraping lookup
     # https://blog.softhints.com/python-compare-dictionary-keys-values/
-    mod_diff = []
-    if bool(datb_mod) is True:
-      db_mod = set(datb_mod.keys())
-      print('-- last_mod keys --')
-      print(last_mod.keys())
-      sc_mod = set(last_mod.keys())
+    nmod_diff = []
+    new_art = {}
+    old_art = {}
 
-      print('-- last mod --')
-      print(len(list(sc_mod)), list(sc_mod))
+    def scrape_lookup(datb_mod, last_mod, nmod_diff, publisher, new_art, old_art):
+      if bool(datb_mod) is True:
+        db_mod = set(datb_mod.keys())
+        sc_mod = set(last_mod.keys())
 
-      mod_diff = sc_mod.difference(db_mod)
-      print('-- diff --')
-      print(len(list(mod_diff)), list(mod_diff))
+        nmod_diff = sc_mod.difference(db_mod)
+        omod_diff = db_mod.difference(sc_mod)
 
-      delete = [k for k in last_mod if k not in mod_diff]
-      print('-- delete --')
-      print(len(mod_diff), delete)
-      for k in delete:
-        del last_mod[k]
+        print('-- new-diff --')
+        print(len(list(nmod_diff)), list(nmod_diff))
+        print('-- old-diff --')
+        print(len(list(omod_diff)), list(omod_diff))
 
-      print('-- index-diff --')
-      print(len(last_mod), last_mod)
-    else:
-      print('db data for ' + names[name] + ' is still empty')
+        # https://stackoverflow.com/a/17665928
+        def ts_diff(diff, main_list):
+          y = [k for k in main_list if k not in diff]
+          return {k: main_list[k] for k in main_list if k not in y}
+
+        new_art = ts_diff(nmod_diff, last_mod)
+        old_art = ts_diff(omod_diff, datb_mod)
+
+        print('-- new-art --')
+        print(len(new_art), new_art)
+        print('-- old-art --')
+        print(len(old_art), old_art)
+
+        return new_art, old_art
+      else:
+        print('db data for ' + publisher + ' is still empty')
+
+    scrape_lookup(datb_mod, last_mod, nmod_diff, publisher, new_art, old_art)
 
     #--- scraping + processing + saving
-    def scrape(publisher, index):
+    def scrape(publisher, index, old_article):
       with requests.Session() as s:
         print('scraping ✂︎')
 
@@ -131,11 +141,16 @@ def main(name, articles):
         if (publisher == 'ac' or publisher == 'oo' or publisher == 'kk'):
           for mod, url in index.items():
             article = {}
-            ac_oo.scraper(s, mod, url, names[name], article)
+            ac_oo.scraper(s, mod, url, publisher, article)
             articles.append(article)
 
             # 1. scrape && save to db
-            save_to_db.scrape(article)
+            if len(nmod_diff) > 0:
+              print('update db record')
+              save_to_db.scrape_update(article, list(old_article.values())[0])
+            else:
+              print('save to db')
+              save_to_db.scrape(article)
 
         # os
         elif (publisher == 'os'):
@@ -158,15 +173,12 @@ def main(name, articles):
               if (entry['publish'] is True):
                 index.append(entry['_pocketindex'])
 
-    # check if website has updated articles
-    # `mod_diff` is the diff b/t
-    # db data and freshly scraped data
-    if bool(mod_diff) is True:
-      scrape(sys.argv[1], last_mod)
+    if bool(datb_mod) is True:
+      scrape(sys.argv[1], new_art, old_art)
 
   # 2. process
   elif (sys.argv[2] == 'tx'):
-    article_bd = save_to_db.get_body(names[name])
+    article_bd = save_to_db.get_body(publisher)
     print(article_bd)
 
     # for item in data:
