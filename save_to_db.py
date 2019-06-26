@@ -189,8 +189,6 @@ def get_mod(publisher):
     tss = get_flat_list(tss)
     tss = [ts.isoformat() for ts in tss]
 
-    print('-- tss --')
-    print(tss)
     mod = dict(zip(tss, urls))
 
     cur.close()
@@ -222,7 +220,6 @@ def get_body(publisher):
     cur.execute("SELECT DISTINCT body FROM scraper WHERE publisher = %s;", (publisher,))
     values = cur.fetchall()
     values = get_flat_list(values)
-    print(len(values))
 
     body = dict(zip(labels, values))
 
