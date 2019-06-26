@@ -37,6 +37,35 @@ def scrape(article):
       conn.close()
       print('db connection closed')
 
+#-- update scraped data in `scraper`
+def scrape_update(article, old_article):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE scraper
+        SET mod = %s, url = %s, title = %s, publisher = %s, abstract = %s, tags = %s, author = %s, body = %s
+        WHERE url = %s;
+        """,
+        (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], old_article)
+    )
+
+    conn.commit()
+    cur.close()
+    print('db record %s updated' % (article['title']))
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
 #-- save to `word_stats`
 def word_stats(article):
   conn = None
