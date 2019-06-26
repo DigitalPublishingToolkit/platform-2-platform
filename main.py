@@ -23,7 +23,7 @@ def text_processing(article):
   words = text_cu(corpus)
   words = nltk.word_tokenize(words)
 
-  #-- produces random syllabes
+  #-- produces random syllables
   # lemmatizer = WordNetLemmatizer()
   # words = [lemmatizer.lemmatize(word) for word in words]
 
@@ -38,7 +38,7 @@ def text_processing(article):
 
   relevancy(article['word-freq'], article)
 
-  print('text processing done...')
+  print('text processing done')
   print(article)
 
   return article
