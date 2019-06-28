@@ -58,7 +58,7 @@ def scraper(s, mod, url, publisher, article):
     tags = soup.find(attrs={'publisher': 'keywords'}).get('content').split(',')
     get_tags(tags)
   elif (publisher == 'kirby-kit'):
-    tags = soup.find('p', class_='note-tags tags').get('content').split(',')
+    tags = soup.find('p', class_='note-tags tags').get('content')
     get_tags(tags)
 
   #-- author
