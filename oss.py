@@ -1,11 +1,9 @@
 #--- open-set
-import requests
 import ciso8601
 from bs4 import BeautifulSoup
 
 def scraper(section, item, apis, article):
-  # article['mod'] =  ciso8601.parse_datetime(item['modified_gmt'])
-  article['mod'] =  item['modified_gmt']
+  article['mod'] = ciso8601.parse_datetime(item['modified_gmt'])
   article['url'] = 'http://hub.openset.nl/' + section['type'] + '/' + item['slug']
   print(article['url'])
 
@@ -26,7 +24,7 @@ def scraper(section, item, apis, article):
   try:
     abstract = getText(item['excerpt']['rendered'])
     article['abstract'] = abstract
-  except:
+  except Exception:
     article['abstract'] = 'None'
 
   #-- tags
@@ -45,7 +43,7 @@ def scraper(section, item, apis, article):
 
   authors = []
   for name in names:
-    if (name[0] %2 == 0):
+    if (name[0] % 2 == 0):
       authors.append(name[1])
 
   article['author'] = authors
@@ -58,7 +56,7 @@ def scraper(section, item, apis, article):
 
   try:
     article['body'] = getText(item['content']['rendered'])
-  except:
+  except Exception:
     textual = []
     get_copy(item['acf'], 'textual', textual)
 
@@ -77,7 +75,6 @@ def scraper(section, item, apis, article):
 
     body = "\n".join(body)
     article['body'] = body
-
 
   print('scraping done...')
   return article
