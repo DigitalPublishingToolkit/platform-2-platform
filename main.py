@@ -95,6 +95,7 @@ def main(name, articles):
 
     publisher = names[name]
     datb_mod = save_to_db.get_mod(publisher)
+    print(datb_mod)
 
     #--- compare mod from db w/ mod from fresh scraping lookup
     # https://blog.softhints.com/python-compare-dictionary-keys-values/
@@ -126,7 +127,7 @@ def main(name, articles):
     mod_list = scrape_lookup(datb_mod, last_mod, publisher)
 
     def add_to_db(nmod_diff, article, old_article):
-      if len(nmod_diff) > 0:
+      if len(list(datb_mod)) > 0:
         print('update db record')
         save_to_db.scrape_update(article, old_article)
       else:
@@ -134,7 +135,7 @@ def main(name, articles):
         save_to_db.scrape(article)
 
     #--- scraping + processing + saving
-    def scrape(publisher, mod_list, sitemap):
+    def scrape(name, publisher, mod_list, sitemap):
       with requests.Session() as s:
         print('scraping ✂︎')
 
@@ -143,7 +144,7 @@ def main(name, articles):
         nmod_diff = list(mod_list)
 
         # ac / oo
-        if (publisher == 'ac' or publisher == 'oo' or publisher == 'kk'):
+        if (name == 'ac' or name == 'oo' or name == 'kk'):
           for mod, url in index.items():
             article = {}
             ac_oo.scraper(s, mod, url, publisher, article)
@@ -152,7 +153,7 @@ def main(name, articles):
             add_to_db(nmod_diff, article, url)
 
         # os
-        elif (publisher == 'os'):
+        elif (name == 'os'):
           # feed `apis[item.data{}]` w/ data
           def getData(item):
             item['data'] = requests.get(item['url']).json()
@@ -169,7 +170,7 @@ def main(name, articles):
               add_to_db(nmod_diff, article, old_article)
 
         # osr
-        elif (publisher == 'osr'):
+        elif (name == 'osr'):
           data = requests.get(sitemap['osr']).json()
           obj = data['_pocketjoins']['map']
 
@@ -188,7 +189,7 @@ def main(name, articles):
             add_to_db(nmod_diff, article, old_article)
 
     #-- scrape
-    scrape(sys.argv[1], mod_list, sitemap)
+    scrape(sys.argv[1], publisher, mod_list, sitemap)
 
   # 2. process
   elif (sys.argv[2] == 'tx'):
