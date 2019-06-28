@@ -117,12 +117,11 @@ def main(name, articles):
         print('-- index-diff --')
         print(len(index_diff), index_diff)
 
-        mod_list = {'index': index_diff, 'url_diff': index_diff.values()}
-        return mod_list
+        return index_diff
       else:
         print('db data for %s is still empty' % publisher)
-        mod_list = {'index': last_mod, 'url_diff': []}
-        return mod_list
+        index_diff = last_mod
+        return index_diff
 
     mod_list = scrape_lookup(datb_mod, last_mod, publisher)
 
@@ -139,9 +138,9 @@ def main(name, articles):
       with requests.Session() as s:
         print('scraping ✂︎')
 
-        index = mod_list['index']
-        old_article = mod_list['url_diff']
-        nmod_diff = list(mod_list['index'])
+        index = mod_list
+        old_article = mod_list.values()
+        nmod_diff = list(mod_list)
 
         # ac / oo
         if (publisher == 'ac' or publisher == 'oo' or publisher == 'kk'):
@@ -150,7 +149,7 @@ def main(name, articles):
             ac_oo.scraper(s, mod, url, publisher, article)
             articles.append(article)
 
-            add_to_db(nmod_diff, article, old_article)
+            add_to_db(nmod_diff, article, url)
 
         # os
         elif (publisher == 'os'):
@@ -188,7 +187,7 @@ def main(name, articles):
 
             add_to_db(nmod_diff, article, old_article)
 
-    # if 'new' in mod_list and len(list(mod_list['new'])) > 0:
+    #-- scrape
     scrape(sys.argv[1], mod_list, sitemap)
 
   # 2. process
