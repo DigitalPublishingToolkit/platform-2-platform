@@ -38,7 +38,7 @@ def scrape(article):
       print('db connection closed')
 
 #-- update scraped data in `scraper`
-def scrape_update(article, old_article):
+def scrape_update(article, old_art_url):
   conn = None
   try:
     params = config()
@@ -52,7 +52,7 @@ def scrape_update(article, old_article):
         SET mod = %s, url = %s, title = %s, publisher = %s, abstract = %s, tags = %s, author = %s, body = %s
         WHERE url = %s;
         """,
-        (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], old_article)
+        (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], old_art_url)
     )
 
     conn.commit()
