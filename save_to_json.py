@@ -18,4 +18,3 @@ def dump (name, articles):
     json.dump(articles, fp)
 
     print('dumped to json!')
-

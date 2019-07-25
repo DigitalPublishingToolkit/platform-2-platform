@@ -29,6 +29,7 @@ def scrape(article):
 
     conn.commit()
     cur.close()
+    print('record saved: %s' % article['url'])
 
   except (Exception, psycopg2.DatabaseError) as error:
     print('db error:', error)
@@ -57,7 +58,7 @@ def scrape_update(article, old_art_url):
 
     conn.commit()
     cur.close()
-    print('db record %s updated' % (article['title']))
+    print('db record updated: %s' % (article['title']))
 
   except (Exception, psycopg2.DatabaseError) as error:
     print('db error:', error)
