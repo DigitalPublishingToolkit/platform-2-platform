@@ -137,56 +137,60 @@ def main(name, articles):
     #--- scraping + processing + saving
     def scrape(name, publisher, mod_list, sitemap):
       with requests.Session() as s:
-        print('scraping ✂︎')
+        if bool(mod_list) is True:
+          print('index diff not empty: scraping ✂︎')
 
-        index = mod_list
-        old_article = mod_list.values()
-        nmod_diff = list(mod_list)
+          index = mod_list
+          old_article = mod_list.values()
+          nmod_diff = list(mod_list)
 
-        # ac / oo
-        if (name == 'ac' or name == 'oo' or name == 'kk'):
-          for mod, url in index.items():
-            article = {}
-            ac_oo.scraper(s, mod, url, publisher, article)
-            articles.append(article)
-
-            add_to_db(nmod_diff, article, url)
-
-        # os
-        elif (name == 'os'):
-          # feed `apis[item.data{}]` w/ data
-          def getData(item):
-            item['data'] = requests.get(item['url']).json()
-
-          # catdata = getData(apis['categories'])
-          for section in apis['sections']:
-            getData(section)
-
-            for item in section['data']:
+          # ac / oo
+          if (name == 'ac' or name == 'oo' or name == 'kk'):
+            for mod, url in index.items():
+              print('ciao!!')
               article = {}
-              oss.scraper(section, item, apis, article)
+              ac_oo.scraper(s, mod, url, publisher, article)
+              articles.append(article)
+
+              add_to_db(nmod_diff, article, url)
+
+          # os
+          elif (name == 'os'):
+            # feed `apis[item.data{}]` w/ data
+            def getData(item):
+              item['data'] = requests.get(item['url']).json()
+
+            # catdata = getData(apis['categories'])
+            for section in apis['sections']:
+              getData(section)
+
+              for item in section['data']:
+                article = {}
+                oss.scraper(section, item, apis, article)
+                articles.append(article)
+
+                add_to_db(nmod_diff, article, old_article)
+
+          # osr
+          elif (name == 'osr'):
+            data = requests.get(sitemap['osr']).json()
+            obj = data['_pocketjoins']['map']
+
+            index = []
+            for item in obj:
+              for entry in item['_pocketjoins']['map']:
+                if (entry['publish'] is True):
+                  index.append(entry['_pocketindex'])
+
+            for slug in index:
+              article = {}
+
+              osr.scraper(s, slug, article)
               articles.append(article)
 
               add_to_db(nmod_diff, article, old_article)
-
-        # osr
-        elif (name == 'osr'):
-          data = requests.get(sitemap['osr']).json()
-          obj = data['_pocketjoins']['map']
-
-          index = []
-          for item in obj:
-            for entry in item['_pocketjoins']['map']:
-              if (entry['publish'] is True):
-                index.append(entry['_pocketindex'])
-
-          for slug in index:
-            article = {}
-
-            osr.scraper(s, slug, article)
-            articles.append(article)
-
-            add_to_db(nmod_diff, article, old_article)
+        else:
+          print('index diff is empty: nothing to scrape')
 
     #-- scrape
     scrape(sys.argv[1], publisher, mod_list, sitemap)
