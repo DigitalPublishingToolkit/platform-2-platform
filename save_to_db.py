@@ -12,6 +12,8 @@ def get_flat_list(data):
 
 #-- save scraped data to `scraper`
 def scrape(article):
+  print('scrape')
+
   conn = None
   try:
     params = config()
@@ -40,6 +42,8 @@ def scrape(article):
 
 #-- update scraped data in `scraper`
 def scrape_update(article, old_art_url):
+  print('scrape update')
+
   conn = None
   try:
     params = config()
