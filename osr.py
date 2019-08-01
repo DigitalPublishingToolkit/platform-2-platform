@@ -1,6 +1,4 @@
 #---- open-set-reader
-import json
-import requests
 import markdown
 from bs4 import BeautifulSoup
 
@@ -22,7 +20,7 @@ def scraper(s, slug, article):
 
   copy = []
   for block in entry['text']:
-    for k,v in block.items():
+    for k, v in block.items():
       if (k == 'content'):
         rv = markdown.markdown(v)
         hv = BeautifulSoup(rv, 'lxml')
