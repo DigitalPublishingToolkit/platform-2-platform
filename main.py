@@ -8,6 +8,7 @@ import osr
 from text_processing import text_cu, stop_words, pos, word_freq, phrases_freq, relevancy
 import nltk
 import save_to_db
+from datetime import timezone
 import ciso8601
 
 #----
@@ -90,18 +91,24 @@ def main(name, articles):
     get_sitemap(soup, 'loc', url)
     get_sitemap(soup, 'lastmod', mod)
 
-    mod = [ciso8601.parse_datetime(mod).isoformat() for mod in mod]
+    # for online-open, let's force add a UTC timezone at the end of
+    # the date-timestamp, so we can match the date-timestamp coming
+    # from the postgresql db, which automatically at a UTC tz as well
+    # (this means a `+00:00` after `2019-07-04T22:00:00`, therefore
+    # all date-timestamp are now in the full isodate format of
+    # `2019-07-04T22:00:00+00:00`
+    mod = [ciso8601.parse_datetime(mod).astimezone(tz=timezone.utc).isoformat() for mod in mod]
     last_mod = dict(zip(mod, url))
 
     publisher = names[name]
     datb_mod = save_to_db.get_mod(publisher)
-    print(datb_mod)
 
     #--- compare mod from db w/ mod from fresh scraping lookup
     # https://blog.softhints.com/python-compare-dictionary-keys-values/
 
     def scrape_lookup(datb_mod, last_mod, publisher):
       # check if db has records of this publisher
+      index_diff = {}
       if bool(datb_mod) is True:
         db_mod = set(datb_mod.keys())
         sc_mod = set(last_mod.keys())
@@ -113,21 +120,28 @@ def main(name, articles):
           return {k: main_list[k] for k in main_list if k not in y}
 
         # diff b/t fresh scraped articles and db
-        index_diff = ts_diff(mod_diff, last_mod)
+        index_diff['action'] = 'update'
+        index_diff['entries'] = ts_diff(mod_diff, last_mod)
+        index_diff['count'] = len(index_diff['entries'])
 
         print('-- index-diff --')
-        print(len(index_diff), index_diff)
+        print(index_diff)
 
         return index_diff
       else:
         print('db data for %s is still empty' % publisher)
-        index_diff = last_mod
+        index_diff['action'] = 'add'
+        index_diff['entries'] = last_mod
+        index_diff['count'] = len(index_diff['entries'])
         return index_diff
 
+    # this is the index_diff b/t db articles and online www
     mod_list = scrape_lookup(datb_mod, last_mod, publisher)
 
-    def add_to_db(nmod_diff, article, old_article):
-      if len(list(datb_mod)) > 0:
+    def add_to_db(mod_list_action, article, old_article):
+      # check mod_list['action'] type to pick between
+      # `scrape_update` & `scrape`
+      if mod_list_action == 'update':
         print('update db record')
         save_to_db.scrape_update(article, old_article)
       else:
