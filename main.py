@@ -54,7 +54,7 @@ def main(name, articles):
   names = {'ac': 'amateurcities',
            'oo': 'online-open',
            'os': 'open-set',
-           'osr': 'openset-reader',
+           'osr': 'open-set-reader',
            'kk': 'kirby-kit'}
 
   if(sys.argv[2] == 'sc'):
