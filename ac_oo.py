@@ -55,10 +55,15 @@ def scraper(s, mod, url, publisher, article):
     tags = soup.find_all(attrs={'property': 'article:tag'})
     get_tags(tags)
   elif (publisher == 'online-open'):
-    tags = soup.find(attrs={'publisher': 'keywords'}).get('content').split(',')
+    tags = soup.find(attrs={'publisher': 'keywords'})
+    if tags is not None:
+      tags = tags.get('content').split(',')
     get_tags(tags)
+
   elif (publisher == 'kirby-kit'):
-    tags = soup.find('p', class_='note-tags tags').get('content')
+    tags = soup.find('p', class_='note-tags tags')
+    if tags is not None:
+      tags = tags.get('content')
     get_tags(tags)
 
   #-- author
