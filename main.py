@@ -92,9 +92,9 @@ def main(name, articles):
     get_sitemap(soup, 'loc', url)
     get_sitemap(soup, 'lastmod', mod)
 
-    # for online-open, let's force add a UTC timezone at the end of
-    # the date-timestamp, so we can match the date-timestamp coming
-    # from the postgresql db, which automatically at a UTC tz as well
+    # for online-open (and anyone else), let's force add a UTC timezone
+    # at the end of the date-timestamp, so we can match the date-timestamp
+    # coming from the postgresql db, which automatically at a UTC tz as well
     # (this means a `+00:00` after `2019-07-04T22:00:00`, therefore
     # all date-timestamp are now in the full isodate format of
     # `2019-07-04T22:00:00+00:00`
@@ -138,6 +138,7 @@ def main(name, articles):
 
     # this is the index_diff b/t db articles and online www
     mod_list = scrape_lookup(datb_mod, last_mod, publisher)
+    print(mod_list)
 
     def add_to_db(mod_list_action, article, old_article):
       # check mod_list['action'] type to pick between
@@ -164,7 +165,17 @@ def main(name, articles):
             ac_oo.scraper(s, mod, url, publisher, article)
             articles.append(article)
 
-            # add_to_db(mod_list['action'], article, old_article)
+            add_to_db(mod_list['action'], article, old_article)
+
+        # --- --- ---
+        # --- open-set will not be updated w/ new articles
+        # --- open-set reader will be update manually
+        # (eg i'll add the articles to the database myself?)
+        # as they won't implement a sitemap
+        # --- therefore no need to diff b/t
+        # db articles and freshly scraped www
+        # --- not using the `add_to_db` func here
+        # just the `save_to_db` one
 
         # os
         elif (name == 'os'):
@@ -184,7 +195,7 @@ def main(name, articles):
             oss.scraper(section, item, apis, article)
             articles.append(article)
 
-            # add_to_db(nmod_diff, article, url)
+            # save_to_db.scrape(article)
 
         # osr
         elif (name == 'osr'):
@@ -201,10 +212,10 @@ def main(name, articles):
             article = {}
             osr.scraper(s, slug, article)
             articles.append(article)
+            # save_to_db.scrape(article)
 
-            add_to_db(nmod_diff, article, old_article)
-        # else:
-        #   print('mod_list empty: nothing to scrape')
+        else:
+          print('mod_list empty: nothing to scrape')
 
     #-- scrape
     scrape(sys.argv[1], publisher, mod_list, sitemap)
