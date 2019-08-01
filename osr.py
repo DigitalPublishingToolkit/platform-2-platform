@@ -7,7 +7,7 @@ def scraper(s, slug, article):
   entry = art.json()
   print(slug)
 
-  article['mod'] = '1970-01-01T00:00:00+00:00' # default to unix timestamp
+  article['mod'] = '1970-01-01T00:00:00+00:00'  # default to unix timestamp, iso-format
   article['url'] = 'http://openset.nl/reader/#!/article/' + slug
 
   article['title'] = entry['title']
