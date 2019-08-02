@@ -8,6 +8,7 @@ import osr
 from text_processing import text_cu, stop_words, pos, word_freq, phrases_freq, relevancy
 import nltk
 import save_to_db
+import get_from_db
 from datetime import timezone
 import ciso8601
 
@@ -102,7 +103,7 @@ def main(name, articles):
     last_mod = dict(zip(mod, url))
 
     publisher = names[name]
-    datb_mod = save_to_db.get_mod(publisher)
+    datb_mod = get_from_db.get_mod(publisher)
 
     #--- compare mod from db w/ mod from fresh scraping lookup
     # https://blog.softhints.com/python-compare-dictionary-keys-values/
@@ -219,7 +220,7 @@ def main(name, articles):
 
   # 2. process
   elif (sys.argv[2] == 'tx'):
-    article_bd = save_to_db.get_body(publisher)
+    article_bd = get_from_db.get_body(publisher)
     print(article_bd)
 
     # for item in data:
