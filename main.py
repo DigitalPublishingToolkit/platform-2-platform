@@ -138,12 +138,11 @@ def main(name, articles):
 
     # this is the index_diff b/t db articles and online www
     mod_list = scrape_lookup(datb_mod, last_mod, publisher)
-    print(mod_list)
 
-    def add_to_db(mod_list_action, article, old_article):
+    def add_to_db(mod_list_count, mod_list_action, article, old_article):
       # check mod_list['action'] type to pick between
       # `scrape_update` & `scrape`
-      if mod_list_action == 'update':
+      if mod_list_count >= 0 and mod_list_action == 'update':
         print('update db record')
         save_to_db.scrape_update(article, old_article)
       else:
@@ -154,9 +153,6 @@ def main(name, articles):
     def scrape(name, publisher, mod_list, sitemap):
       with requests.Session() as s:
 
-        # if mod_list is True:
-        # print('mod_list full: scraping ✂︎')
-
         # ac / oo
         if (name == 'ac' or name == 'oo' or name == 'kk'):
           for mod, url in mod_list['entries'].items():
@@ -165,17 +161,14 @@ def main(name, articles):
             ac_oo.scraper(s, mod, url, publisher, article)
             articles.append(article)
 
-            add_to_db(mod_list['action'], article, old_article)
+            add_to_db(mod_list['count'], mod_list['action'], article, old_article)
 
-        # --- --- ---
-        # --- open-set will not be updated w/ new articles
-        # --- open-set reader will be update manually
-        # (eg i'll add the articles to the database myself?)
-        # as they won't implement a sitemap
-        # --- therefore no need to diff b/t
-        # db articles and freshly scraped www
-        # --- not using the `add_to_db` func here
-        # just the `save_to_db` one
+        # ---
+        # not using `add_to_db` function for os and osr
+        # just checking if articles are saved in db once
+        # after that no more scraping;
+        # for os no more articles, for osr some new articles
+        # will be manually added to db
 
         # os
         elif (name == 'os'):
@@ -183,19 +176,20 @@ def main(name, articles):
           def getData(item):
             item['data'] = requests.get(item['url']).json()
 
-          # fetch data for sections items
-          # and categories
+          # fetch data for sections items and categories
           for section in apis['sections']:
             getData(section)
 
           getData(apis['categories'])
 
-          for item in section['data']:
-            article = {}
-            oss.scraper(section, item, apis, article)
-            articles.append(article)
-
-            # save_to_db.scrape(article)
+          if mod_list['count'] >= 0 and mod_list['action'] == 'add':
+            for item in section['data']:
+              article = {}
+              oss.scraper(section, item, apis, article)
+              articles.append(article)
+              save_to_db.scrape(article)
+          else:
+            print('os: db is full, no new articles to fetch')
 
         # osr
         elif (name == 'osr'):
@@ -208,11 +202,14 @@ def main(name, articles):
               if (entry['publish'] is True):
                 index.append(entry['_pocketindex'])
 
-          for slug in index:
-            article = {}
-            osr.scraper(s, slug, article)
-            articles.append(article)
-            # save_to_db.scrape(article)
+          if mod_list['count'] >= 0 and mod_list['action'] == 'add':
+            for slug in index:
+              article = {}
+              osr.scraper(s, slug, article)
+              articles.append(article)
+              save_to_db.scrape(article)
+          else:
+            print('osr: db is full, no new articles to fetch')
 
         else:
           print('mod_list empty: nothing to scrape')
