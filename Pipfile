@@ -14,6 +14,9 @@ markdown = "*"
 nltk = "*"
 requests = "*"
 psycopg2-binary = "*"
+numpy = "*"
+scipy = "*"
+gensim = "*"
 
 [requires]
 python_version = "3.7"
