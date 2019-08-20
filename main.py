@@ -58,6 +58,8 @@ def main(name, articles):
            'osr': 'open-set-reader',
            'kk': 'kirby-kit'}
 
+  publisher = names[name]
+
   if(sys.argv[2] == 'sc'):
     #-- get sitemap
     sitemap = {'ac': 'https://amateurcities.com/post-sitemap.xml',
@@ -102,7 +104,6 @@ def main(name, articles):
     mod = [ciso8601.parse_datetime(mod).astimezone(tz=timezone.utc).isoformat() for mod in mod]
     last_mod = dict(zip(mod, url))
 
-    publisher = names[name]
     datb_mod = get_from_db.get_mod(publisher)
 
     #--- compare mod from db w/ mod from fresh scraping lookup
