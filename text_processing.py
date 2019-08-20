@@ -5,7 +5,7 @@ from nltk import ngrams, FreqDist, pos_tag
 import re
 
 #-- text-clean-up
-def text_cu (text):
+def text_cu(text):
   # take out punctuation
   text = re.sub(r'[^\w\s]', '', text)
   text = text.lower()
@@ -17,7 +17,7 @@ def text_cu (text):
 
 
 #-- stop-words
-def stop_words (text, article):
+def stop_words(text, article):
   sw = set(stopwords.words('english'))
 
   stop_words = []
@@ -31,7 +31,7 @@ def stop_words (text, article):
   return wordsclean
 
 
-def pos (corpus, article):
+def pos(corpus, article):
   tk = pos_tag(corpus)
   words = []
   for word, code in tk:
@@ -41,7 +41,7 @@ def pos (corpus, article):
   return words
 
 #-- word-frequency
-def word_freq (corpus, article):
+def word_freq(corpus, article):
   wordfreq = []
   wf = FreqDist(corpus)
 
@@ -58,14 +58,14 @@ def word_freq (corpus, article):
 
 
 #-- n-word phrases frequency
-def phrases_freq (text, size, article):
+def phrases_freq(text, size, article):
   pf = dict()
   pf = FreqDist(ngrams(text, size))
 
   article[str(size) + 'w-phrases'] = pf.most_common()
 
 
-def relevancy (word_freq, article):
+def relevancy(word_freq, article):
   relevancy = 0
   addup = 0
   for word in word_freq:
