@@ -62,17 +62,16 @@ def get_body(publisher):
 
     #-- values
     cur.execute("SET TIME ZONE 'UTC';")
-
-    cur.execute("SELECT DISTINCT mod, url, title, publisher, abstract, tags, author, body, id FROM scraper WHERE publisher = %s;", (publisher,))
-    # cur.execute("SELECT DISTINCT %s FROM scraper WHERE publisher = %s;", (', '.join(labels), publisher,))
+    cur.execute("SELECT DISTINCT %s FROM scraper WHERE publisher = '%s';" % (', '.join(labels), publisher))
     values = cur.fetchall()
 
-    values = [l for t in values for l in t]
-    print(values)
+    index = []
+    for item in values:
+      article = dict(zip(labels, item))
+      index.append(article)
 
-    body = dict(zip(labels, values))
     cur.close()
-    return body
+    return index
 
   except (Exception, psycopg2.DatabaseError) as error:
     print('db error:', error)
