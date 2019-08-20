@@ -66,8 +66,17 @@ def get_body(publisher):
     values = cur.fetchall()
 
     index = []
-    for item in values:
-      article = dict(zip(labels, item))
+    for article in values:
+
+      # convert type objects into string
+      art = []
+      for item in article:
+        try:
+          art.append(item.isoformat())
+        except Exception:
+          art.append(item)
+
+      article = dict(zip(labels, art))
       index.append(article)
 
     cur.close()
