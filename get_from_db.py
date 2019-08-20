@@ -61,12 +61,16 @@ def get_body(publisher):
     labels = get_flat_list(labels)
 
     #-- values
-    cur.execute("SELECT DISTINCT body FROM scraper WHERE publisher = %s;", (publisher,))
+    cur.execute("SET TIME ZONE 'UTC';")
+
+    cur.execute("SELECT DISTINCT mod, url, title, publisher, abstract, tags, author, body, id FROM scraper WHERE publisher = %s;", (publisher,))
+    # cur.execute("SELECT DISTINCT %s FROM scraper WHERE publisher = %s;", (', '.join(labels), publisher,))
     values = cur.fetchall()
-    values = get_flat_list(values)
+
+    values = [l for t in values for l in t]
+    print(values)
 
     body = dict(zip(labels, values))
-
     cur.close()
     return body
 
