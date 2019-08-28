@@ -1,7 +1,7 @@
 import time
 import json
 
-def store (name, articles):
+def store(name, articles):
   filename = name
 
   with open('store/%s.json' % filename, 'w') as fp:
@@ -9,7 +9,7 @@ def store (name, articles):
 
     print('stored json!')
 
-def dump (name, articles):
+def dump(name, articles):
   timestamp = time.strftime("%Y-%m-%d-%H%M%S")
   filename = name + '_' + timestamp
 
