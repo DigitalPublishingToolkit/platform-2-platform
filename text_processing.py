@@ -1,5 +1,4 @@
 import contractions
-import nltk
 from nltk.corpus import stopwords
 from nltk import ngrams, FreqDist, pos_tag
 import re
@@ -34,11 +33,18 @@ def stop_words(text, article):
 def pos(corpus, article):
   tk = pos_tag(corpus)
   words = []
+  # take out adverbs, but why?
   for word, code in tk:
     if (code != 'RB'):
       words.append(word)
 
   return words
+
+
+#-- gonna replace both `word-frequency`,
+# `n-word phrases frequency` and
+# `relevancy` with `word2vec` and `doc2vec`
+# using `gensim`
 
 #-- word-frequency
 def word_freq(corpus, article):

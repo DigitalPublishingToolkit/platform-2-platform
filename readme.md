@@ -16,21 +16,33 @@ We're re-creating a web-ring on a bigger-scale.
 3. data saved to postgresql database
 4. javascript script embedded in each journal website, to talk between journal and database
 
+## Usage
+
+Set python local environment
+
+    $ pyenv local 3.7.3
+
+Enable python virtual environment and run shell
+
+    $ pipenv shell
+    
+Whenever you need to install a new python module, do
+
+    $ pipenv install <package-name>
+    
+It will be saved into `Pipfile` and `Pipfile.lock`. You can then do `pipenv install` to install from the `Pipfile`. This is similar to how `npm` and `package.json` work.
+
 ## Scraper
 
 To fetch articles from one of the three websites, eg Amateur Cities, do:
 
-```
-$ python main.py ac sc
-```
+    $ python main.py ac sc
 
 the `sc` flag stands for *scrape*. there is another flag so far, `tx` to do text-processing.
 
 - scrape, `sc`
-- text-processing
-
-- Amateur Cities, `ac`
-- Online Open!, `oo`
-- Open Set, `os`
-- Open Set Reader, `osr`
-
+  - Amateur Cities, `ac`
+  - Online Open!, `oo`
+  - Open Set, `os`
+  - Open Set Reader, `osr`
+- text-processing `tx`
