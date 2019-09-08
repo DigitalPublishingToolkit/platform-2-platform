@@ -1,16 +1,27 @@
 import sys
 import requests
 from bs4 import BeautifulSoup
-import ac_oo
+import ac
+import oo
 import oss
 import osr
-from text_processing import text_cu, stop_words, pos, word_freq, phrases_freq, relevancy
+from text_processing import text_cu, stop_words, unique_words, tags_filter
 import nltk
 import save_to_db
 import save_to_json
 import get_from_db
 from datetime import timezone
 import ciso8601
+import gensim
+from gensim import corpora
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+
+import collections
+import random
+import csv
+
+import logging
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 #----
 # run scraper with list of urls to check for scraping
@@ -53,7 +64,7 @@ articles_pre = []
 articles_post = []
 
 def main(name, articles_pre, articles_post):
-  names = {'ac': 'amateurcities',
+  names = {'ac': 'amateur-cities',
            'oo': 'online-open',
            'os': 'open-set',
            'osr': 'open-set-reader',
@@ -66,8 +77,7 @@ def main(name, articles_pre, articles_post):
     sitemap = {'ac': 'https://amateurcities.com/post-sitemap.xml',
                'oo': 'https://www.onlineopen.org/sitemap.xml',
                'os': 'http://hub.openset.nl/backend/wp-json',
-               'osr': 'http://openset.nl/reader/pocket/api/get.php?type=root&id=root',
-               'kk': 'http://kk.andrefincato.info/sitemap.xml'}
+               'osr': 'http://openset.nl/reader/pocket/api/get.php?type=root&id=root'}
 
     #-- open-set apis
     apis = {'sections': [{'type': 'project',
@@ -152,16 +162,26 @@ def main(name, articles_pre, articles_post):
         print('save to db')
         save_to_db.scrape(article)
 
-    #--- scraping + processing + saving
+    #--- scraping + saving
     def scrape(name, publisher, mod_list, sitemap):
       with requests.Session() as s:
 
-        # ac / oo
-        if (name == 'ac' or name == 'oo' or name == 'kk'):
+        # ac
+        if (name == 'ac'):
           for mod, url in mod_list['entries'].items():
             old_article = url
             article = {}
-            ac_oo.scraper(s, mod, url, publisher, article)
+            ac.scraper(s, mod, url, publisher, article)
+            articles_pre.append(article)
+
+            add_to_db(mod_list['count'], mod_list['action'], article, old_article)
+
+        # oo
+        elif (name == 'oo'):
+          for mod, url in mod_list['entries'].items():
+            old_article = url
+            article = {}
+            oo.scraper(s, mod, url, publisher, article)
             articles_pre.append(article)
 
             add_to_db(mod_list['count'], mod_list['action'], article, old_article)
