@@ -30,7 +30,7 @@ Whenever you need to install a new python module, do
 
     $ pipenv install <package-name>
     
-It will be saved into `Pipfile` and `Pipfile.lock`. You can then do `pipenv install` to install from the `Pipfile`. This is similar to how `npm` and `package.json` work.
+Packages will be saved into `Pipfile` and `Pipfile.lock`. You can then do `pipenv install` to install your list of packages from the `Pipfile`. This is similar to how `npm` and `package.json` work.
 
 ## Scraper
 
