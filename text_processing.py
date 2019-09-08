@@ -40,6 +40,46 @@ def pos(corpus, article):
 
   return words
 
+def tags_filter(tags):
+  tags_master = ['commons',
+                 'labour',
+                 'finance and money'
+                 'commercialization',
+                 'commodification',
+                 'capitalism',
+                 'archive-memory',
+                 'anti-disciplinarity'
+                 'learning',
+                 'public domain',
+                 'image-representation',
+                 'architecture',
+                 'theory-reflection',
+                 'media',
+                 'technology',
+                 'mobility',
+                 'displacement',
+                 'movement',
+                 'citizenship',
+                 'control',
+                 'inequity',
+                 'colonization',
+                 'alternatives',
+                 'futures',
+                 'activism',
+                 'wicked problems',
+                 'public space',
+                 'conflict',
+                 'methods',
+                 'ecologies',
+                 'care']
+
+  taglist = []
+  for tag in tags:
+    if tag in tags_master:
+      taglist.append(tag)
+
+  return taglist
+
 
 #-- gonna replace both `word-frequency`,
 # `n-word phrases frequency` and
