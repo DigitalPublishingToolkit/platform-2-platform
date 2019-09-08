@@ -5,4 +5,5 @@ share/
 dump/
 store/
 env/
+node_modules
 db.ini

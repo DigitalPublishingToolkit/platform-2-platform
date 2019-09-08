@@ -1,0 +1,24 @@
+{
+  "name": "platform2platform",
+  "version": "1.0.0",
+  "description": "platform 2 platform",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/afincato/platform-2-platform.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/afincato/platform-2-platform/issues"
+  },
+  "homepage": "https://github.com/afincato/platform-2-platform#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "pg": "^7.12.1",
+    "pg-format": "^1.0.4"
+  }
+}
