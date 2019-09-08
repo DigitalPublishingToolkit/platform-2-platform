@@ -196,17 +196,30 @@ def main(name, articles_pre, articles_post):
 
         # osr
         elif (name == 'osr'):
-          data = requests.get(sitemap['osr']).json()
-          obj = data['_pocketjoins']['map']
+          # data = requests.get(sitemap['osr']).json()
+          # obj = data['_pocketjoins']['map']
 
-          index = []
-          for item in obj:
-            for entry in item['_pocketjoins']['map']:
-              if (entry['publish'] is True):
-                index.append(entry['_pocketindex'])
+          def get_sitemap(path):
+            slugs = []
+            with open(path) as tsv:
+              tsv = csv.reader(tsv, delimiter='\t')
+              for row in tsv:
+                slugs.append(row[1].split('/')[-1])
+
+            return slugs
+
+          slug_list = get_sitemap('store/open-set-articles.tsv')
+          print(slug_list)
+
+          # index = []
+          # for item in obj:
+          #   for entry in item['_pocketjoins']['map']:
+          #     if (entry['publish'] is True):
+          #       index.append(entry['_pocketindex'])
 
           if mod_list['count'] >= 0 and mod_list['action'] == 'add':
-            for slug in index:
+            # for slug in index:
+            for slug in slug_list:
               article = {}
               osr.scraper(s, slug, article)
               articles_pre.append(article)
