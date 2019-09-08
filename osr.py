@@ -2,6 +2,7 @@
 from datetime import datetime, timezone
 import markdown
 from bs4 import BeautifulSoup
+import csv
 
 def scraper(s, slug, article):
   art = s.get('http://openset.nl/reader/pocket/api/get.php?type=articles&id=' + slug)
@@ -10,13 +11,25 @@ def scraper(s, slug, article):
   article['mod'] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
   article['url'] = 'http://openset.nl/reader/#!/article/' + slug
 
-  article['title'] = entry['title']
-  article['abstract'] = 'empty'
+  article['title'] = entry['title'].replace('<\br>\n', '')
+  article['abstract'] = ''
 
   article['publisher'] = 'open-set-reader'
 
-  article['tags'] = []
-  article['author'] = entry['author']
+  def tags(path, title):
+    taglist = []
+    with open(path) as tsv:
+      tsv = csv.reader(tsv, delimiter='\t')
+
+      for row in tsv:
+        if row[0] == title:
+          taglist = row[2].lower().strip().split('\n')
+
+    article['tags'] = taglist
+
+  tags('store/open-set-articles.tsv', article['title'])
+
+  article['author'] = entry['author'].strip()
 
   copy = []
   for block in entry['text']:
