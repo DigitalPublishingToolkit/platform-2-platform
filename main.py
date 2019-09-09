@@ -8,7 +8,6 @@ import osr
 from text_processing import text_cu, stop_words, unique_words, tags_filter
 import nltk
 import save_to_db
-import save_to_json
 import get_from_db
 from datetime import timezone
 import ciso8601
@@ -60,10 +59,9 @@ def text_processing(article):
 
 
 #-- main
-articles_pre = []
-articles_post = []
+articles = []
 
-def main(name, articles_pre, articles_post):
+def main(name, articles):
   names = {'ac': 'amateur-cities',
            'oo': 'online-open',
            'os': 'open-set',
@@ -172,7 +170,7 @@ def main(name, articles_pre, articles_post):
             old_article = url
             article = {}
             ac.scraper(s, mod, url, publisher, article)
-            articles_pre.append(article)
+            articles.append(article)
 
             add_to_db(mod_list['count'], mod_list['action'], article, old_article)
 
@@ -182,7 +180,7 @@ def main(name, articles_pre, articles_post):
             old_article = url
             article = {}
             oo.scraper(s, mod, url, publisher, article)
-            articles_pre.append(article)
+            articles.append(article)
 
             add_to_db(mod_list['count'], mod_list['action'], article, old_article)
 
@@ -209,7 +207,7 @@ def main(name, articles_pre, articles_post):
             for item in section['data']:
               article = {}
               oss.scraper(section, item, apis, article)
-              articles_pre.append(article)
+              articles.append(article)
               save_to_db.scrape(article)
           else:
             print('os: db is full, no new articles to fetch')
@@ -242,7 +240,7 @@ def main(name, articles_pre, articles_post):
             for slug in slug_list:
               article = {}
               osr.scraper(s, slug, article)
-              articles_pre.append(article)
+              articles.append(article)
               save_to_db.scrape(article)
           else:
             print('osr: db is full, no new articles to fetch')
@@ -256,12 +254,10 @@ def main(name, articles_pre, articles_post):
   # 2. process
   elif (sys.argv[2] == 'tx'):
     articles = get_from_db.get_body(publisher)
-    # print(articles)
 
     for item in articles:
       try:
         article = text_processing(item)
-        articles_post.append(article)
       except Exception as e:
         print('text-processing:', e)
 
@@ -272,8 +268,7 @@ def main(name, articles_pre, articles_post):
     #   print(article['word-freq'])
     #   print('---')
 
-    save_to_json.dump(name, articles)
 
 
 if __name__ == '__main__':
-  main(sys.argv[1], articles_pre, articles_post)
+  main(sys.argv[1], articles)
