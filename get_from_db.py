@@ -90,6 +90,56 @@ def get_body(publisher):
       print('db connection closed')
 
 #-- get tokens from all pubs except the one passed in the arg
+def get_metadata(publisher):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    #-- get list of publishers and take out the one passed
+    cur.execute("SELECT DISTINCT publisher FROM article_metadata")
+    pubs = cur.fetchall()
+    pubs = get_flat_list(pubs)
+    pubs.remove(publisher)
+    pubs = tuple(pubs)
+
+    #-- labels
+    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'article_metadata';")
+    labels = cur.fetchall()
+    labels = get_flat_list(labels)
+
+    #-- values
+    cur.execute("SET TIME ZONE 'UTC';")
+    cur.execute("SELECT DISTINCT %s FROM article_metadata WHERE publisher IN %s;" % (', '.join(labels), pubs))
+    values = cur.fetchall()
+
+    index = []
+    for article in values:
+
+      # convert type objects into string
+      art = []
+      for item in article:
+        try:
+          art.append(item.isoformat())
+        except Exception:
+          art.append(item)
+
+      article = dict(zip(labels, art))
+      index.append(article)
+
+    cur.close()
+    return index
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
+#-- get tokens from all pubs except the one passed in the arg
 def get_corpus(publisher):
   conn = None
   try:
@@ -105,13 +155,25 @@ def get_corpus(publisher):
     pubs.remove(publisher)
     pubs = tuple(pubs)
 
+    index = {}
+    for pub in pubs:
+      cur.execute("SELECT COUNT(*) FROM tokens WHERE publisher = %s", (pub,))
+      count = cur.fetchone()[0]
+      index[pub] = count
+
+    print(index)
+
     cur.execute("SELECT tokens FROM tokens WHERE publisher IN %s", (pubs,))
     tokens = cur.fetchall()
     tokens = get_flat_list(tokens)
-    # tokens = [item for sublist in tokens for item in sublist]
+
+    results = {
+      'index': index,
+      'data': tokens
+    }
 
     cur.close()
-    return tokens
+    return results
 
   except (Exception, psycopg2.DatabaseError) as error:
     print('db error:', error)
