@@ -32,28 +32,20 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 
 #-- shape data up
 def text_processing(article):
-  corpus = '\n\n\n\n'.join([article['title'], article['abstract'],
-                            article['body']])
+  tags = tags_filter(article['tags'])
+  # print(tags)
+  article['tags'] = tags
+
+  corpus = ' '.join([article['title'], ' '.join(tags), article['body']])
+
   words = text_cu(corpus)
   words = nltk.word_tokenize(words)
-
-  #-- produces random syllables
-  # lemmatizer = WordNetLemmatizer()
-  # words = [lemmatizer.lemmatize(word) for word in words]
-
-  sw = stop_words(words, article)
-  article['body-tokens'] = pos(sw, article)
-  article['body-words-length'] = len(article['body-tokens'])
-
-  word_freq(article['body-tokens'], article)
-
-  phrases_freq(article['body-tokens'], 2, article)
-  phrases_freq(article['body-tokens'], 3, article)
-
-  relevancy(article['word-freq'], article)
+  words = stop_words(words, article)
+  words = unique_words(words, article)
+  article['tokens'] = words
 
   print('text processing done')
-  print(article)
+  # print(article)
 
   return article
 
@@ -258,6 +250,8 @@ def main(name, articles):
     for item in articles:
       try:
         article = text_processing(item)
+        save_to_db.metadata(article)
+        save_to_db.tokens(article)
       except Exception as e:
         print('text-processing:', e)
 
@@ -267,7 +261,7 @@ def main(name, articles):
     # for article in articles:
     #   print(article['word-freq'])
     #   print('---')
-
+        print('text-processing ERROR:', e)
 
 
 if __name__ == '__main__':
