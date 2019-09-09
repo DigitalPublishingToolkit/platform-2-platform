@@ -14,6 +14,7 @@ import ciso8601
 import gensim
 from gensim import corpora
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+from gensim.test.utils import get_tmpfile
 
 import collections
 import random
@@ -256,21 +257,37 @@ def main(name, articles):
         print('text-processing ERROR:', e)
 
   elif (sys.argv[2] == 'tv'):
-    # get join corpuses from all pubs except the one passed as arg
-    input_corpus = get_from_db.get_body(publisher)
+    # -- get article metadata from all pubs except the one passed as `arg`
+    metadata = get_from_db.get_metadata(publisher)
+    print(metadata)
 
-    dictionary = corpora.Dictionary(input_corpus)
-    print(dictionary)
+    # -- get corpuses from all pubs except the one passed as `arg`
+    input_corpus = get_from_db.get_corpus(publisher)
+    print(input_corpus['index'], len(input_corpus['data']))
 
-    corpus = [dictionary.doc2bow(text) for text in input_corpus]
-    print(corpus)
+    dictionary = corpora.Dictionary(input_corpus['data'])
+    # print(dictionary)
 
-    documents = [TaggedDocument(doc, [i]) for i, doc in enumerate(input_corpus)]
-    print(documents)
+    corpus = [dictionary.doc2bow(text) for text in input_corpus['data']]
+    # print(corpus)
 
+    documents = [TaggedDocument(doc, [i]) for i, doc in enumerate(input_corpus['data'])]
+    # print(documents)
+
+    # setup model
     model = Doc2Vec(dm=1, vector_size=50, window=2, min_count=2, workers=4, epochs=40)
     # model = Doc2Vec(size=100, window=10, min_count=5, workers=11, alpha=0.025, iter=20)
 
+    pubs = ['amateur-cities', 'online-open', 'open-set-reader']
+    pubs.remove(publisher)
+    pubs = '_'.join(pubs)
+    print('PUBS', pubs)
+
+    # save model to disk
+    fn_model = get_tmpfile(pubs)
+    model.save(fn_model)
+
+    model = Doc2Vec.load(fn_model)
     model.build_vocab(documents)
     model.train(documents, total_examples=model.corpus_count, epochs=model.epochs)
 
@@ -286,32 +303,29 @@ def main(name, articles):
       ranks.append(rank)
       second_ranks.append(sims[1])
 
-    print(ranks)
-    print(second_ranks)
-
     print('-- MOST SIMILAR DOC')
     print('Document ({}): «{}»\n'.format(doc_id, ' '.join(documents[doc_id].words)))
     print(u'SIMILAR/DISSIMILAR DOCS PER MODEL %s:\n' % model)
     for label, index in [('MOST', 0), ('SECOND-MOST', 1), ('MEDIAN', len(sims) // 2), ('LEAST', len(sims) - 1)]:
-      title = articles[documents[index].tags[0]]['title']
-      url = articles[documents[index].tags[0]]['url']
-      abstract = articles[documents[index].tags[0]]['abstract']
+      title = metadata[documents[index].tags[0]]['title']
+      url = metadata[documents[index].tags[0]]['url']
+      abstract = metadata[documents[index].tags[0]]['abstract']
       print(u'- %s\n- %s\n- %s\n- %s %s: «%s»\n' % (title, url, abstract, label, sims[index], ' '.join(documents[sims[index][0]].words)))
 
-    # Pick a random document from the corpus and infer a vector from the model
-    doc_id = random.randint(0, len(documents) - 1)
+    # # Pick a random document from the corpus and infer a vector from the model
+    # doc_id = random.randint(0, len(documents) - 1)
 
-    # Compare and print the second-most-similar document
-    print('-- SECOND-MOST-SIMILAR DOCUMENT')
-    dtitle = articles[documents[doc_id].tags[0]]['title']
-    durl = articles[documents[doc_id].tags[0]]['url']
-    dabstract = articles[documents[doc_id].tags[0]]['abstract']
-    print('Train Document ({}):\n- {}\n- {}\n- {}\n«{}»\n'.format(doc_id, dtitle, durl, dabstract, ' '.join(documents[doc_id].words)))
-    sim_id = second_ranks[doc_id]
-    stitle = articles[documents[sim_id[0]].tags[0]]['title']
-    surl = articles[documents[sim_id[0]].tags[0]]['url']
-    sabstract = articles[documents[sim_id[0]].tags[0]]['abstract']
-    print('Similar Document {}:\n- {}\n- {}\n- {}\n«{}»\n'.format(sim_id, stitle, surl, sabstract, ' '.join(documents[sim_id[0]].words)))
+    # # Compare and print the second-most-similar document
+    # print('-- SECOND-MOST-SIMILAR DOCUMENT')
+    # dtitle = articles[documents[doc_id].tags[0]]['title']
+    # durl = articles[documents[doc_id].tags[0]]['url']
+    # dabstract = articles[documents[doc_id].tags[0]]['abstract']
+    # print('Train Document ({}):\n- {}\n- {}\n- {}\n«{}»\n'.format(doc_id, dtitle, durl, dabstract, ' '.join(documents[doc_id].words)))
+    # sim_id = second_ranks[doc_id]
+    # stitle = articles[documents[sim_id[0]].tags[0]]['title']
+    # surl = articles[documents[sim_id[0]].tags[0]]['url']
+    # sabstract = articles[documents[sim_id[0]].tags[0]]['abstract']
+    # print('Similar Document {}:\n- {}\n- {}\n- {}\n«{}»\n'.format(sim_id, stitle, surl, sabstract, ' '.join(documents[sim_id[0]].words)))
 
 
 if __name__ == '__main__':
