@@ -88,3 +88,34 @@ def get_body(publisher):
     if conn is not None:
       conn.close()
       print('db connection closed')
+
+#-- get tokens from all pubs except the one passed in the arg
+def get_corpus(publisher):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    # -- get list of publishers and take out the one passed
+    cur.execute("SELECT DISTINCT publisher FROM article_metadata")
+    pubs = cur.fetchall()
+    pubs = get_flat_list(pubs)
+    pubs.remove(publisher)
+    pubs = tuple(pubs)
+
+    cur.execute("SELECT tokens FROM tokens WHERE publisher IN %s", (pubs,))
+    tokens = cur.fetchall()
+    tokens = get_flat_list(tokens)
+    # tokens = [item for sublist in tokens for item in sublist]
+
+    cur.close()
+    return tokens
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
