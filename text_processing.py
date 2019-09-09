@@ -1,3 +1,4 @@
+from collections import defaultdict
 import contractions
 from nltk.corpus import stopwords
 from nltk import ngrams, FreqDist, pos_tag
@@ -29,6 +30,13 @@ def stop_words(text, article):
 
   return wordsclean
 
+def unique_words(text, article):
+  frequency = defaultdict(int)
+  for token in text:
+    frequency[token] += 1
+
+  tokens = [key for key, value in frequency.items() if value > 1]
+  return tokens
 
 def pos(corpus, article):
   tk = pos_tag(corpus)
@@ -80,3 +88,4 @@ def tags_filter(tags):
 
   return taglist
 
+#-- end
