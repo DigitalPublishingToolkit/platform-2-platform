@@ -64,8 +64,8 @@ def scrape_update(article, old_art_url):
       conn.close()
       print('db connection closed')
 
-#-- save to `word_stats`
-def word_stats(article):
+#-- save to `article_metadata`
+def metadata(article):
   conn = None
   try:
     params = config()
@@ -73,16 +73,42 @@ def word_stats(article):
     conn = psycopg2.connect(**params)
     cur = conn.cursor()
 
-    cur.execute(
-        """
-        INSERT INTO word_stats (body-tokens, body-words-length, relevancy, publisher)
-        VALUES (%s, %s, %s, %s);
-        """,
-        (article['body-tokens'], article['body-words-length'], article['relevancy'], article['publisher'])
-    )
+    def query_exists():
+      cur.execute(
+          """
+          SELECT EXISTS (SELECT 1 FROM article_metadata WHERE title = %s)
+          """,
+          (article['title'],))
 
-    conn.commit()
-    cur.close()
+      return cur.fetchone()[0]
+
+    def metadata_update():
+      query = """
+          UPDATE article_metadata
+          SET mod = %s, url = %s, title = %s, publisher = %s, abstract = %s, tags = %s, author = %s
+          WHERE title = %s;
+          """
+      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['title']))
+      conn.commit()
+
+      print('article_metadata has been UPDATED for publisher %s' % article['publisher'])
+
+    def metadata_add():
+      query = """
+          insert into article_metadata (mod, url, title, publisher, abstract, tags, author)
+          values (%s, %s, %s, %s, %s, %s, %s);
+          """
+      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author']))
+      conn.commit()
+
+      print('article_metadata has been ADDED for publisher %s' % article['publisher'])
+
+    if query_exists() is True:
+      print(query_exists())
+      metadata_update()
+    else:
+      print(query_exists())
+      metadata_add()
 
   except (Exception, psycopg2.DatabaseError) as error:
     print('db error:', error)
@@ -91,100 +117,29 @@ def word_stats(article):
       conn.close()
       print('db connection closed')
 
-#-- save to `word_frequency`
-def word_freq(article):
+#-- save to `tokens`
+def tokens(article):
   conn = None
   try:
     params = config()
     print('connecting to db...')
     conn = psycopg2.connect(**params)
     cur = conn.cursor()
+
+    # if table is not empty
+    # UPDATE table, else
+    # INSERT INTO table
 
     cur.execute(
         """
-        INSERT INTO word_stats (word, frequency, relative_freq, publisher)
-        VALUES (%s, %s, %s, %s);
+        INSERT INTO tokens (title, publisher, tokens)
+        VALUES (%s, %s, %s);
         """,
-        (article['word'], article['frequency'], article['relative_freq'], article['publisher'])
+        (article['title'], article['publisher'], article['tokens'])
     )
 
     conn.commit()
-    cur.close()
-
-  except (Exception, psycopg2.DatabaseError) as error:
-    print('db error:', error)
-  finally:
-    if conn is not None:
-      conn.close()
-      print('db connection closed')
-
-#-- save to `two_word_frequency`
-def two_word_freq(article):
-  conn = None
-  try:
-    params = config()
-    print('connecting to db...')
-    conn = psycopg2.connect(**params)
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        INSERT INTO word_stats (word_01, word_02, frequency, publisher)
-        VALUES (%s, %s, %s, %s);
-        """,
-        (article['word'][0], article['word'][1], article['frequency'], article['publisher'])
-    )
-
-    conn.commit()
-    cur.close()
-
-  except (Exception, psycopg2.DatabaseError) as error:
-    print('db error:', error)
-  finally:
-    if conn is not None:
-      conn.close()
-      print('db connection closed')
-
-#-- save to `three_word_frequency`
-def three_word_freq(article):
-  conn = None
-  try:
-    params = config()
-    print('connecting to db...')
-    conn = psycopg2.connect(**params)
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        INSERT INTO word_stats (word_01, word_02, word_03, frequency, publisher)
-        VALUES (%s, %s, %s, %s, %s);
-        """,
-        (article['word'][0], article['word'][1], article['word'][2], article['frequency'], article['publisher'])
-    )
-
-    conn.commit()
-    cur.close()
-
-  except (Exception, psycopg2.DatabaseError) as error:
-    print('db error:', error)
-  finally:
-    if conn is not None:
-      conn.close()
-      print('db connection closed')
-
-#-- save to `article_body`
-def body(article):
-  conn = None
-  try:
-    params = config()
-    print('connecting to db...')
-    conn = psycopg2.connect(**params)
-    cur = conn.cursor()
-
-    cur.execute("INSERT INTO article_body (body) VALUES (%s);", (article['body']))
-
-    conn.commit()
-    cur.close()
+    # cur.close()
 
   except (Exception, psycopg2.DatabaseError) as error:
     print('db error:', error)
