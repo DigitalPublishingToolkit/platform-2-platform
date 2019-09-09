@@ -253,14 +253,6 @@ def main(name, articles):
         save_to_db.metadata(article)
         save_to_db.tokens(article)
       except Exception as e:
-        print('text-processing:', e)
-
-    # 3. save to db
-    # save_to_db.body(article)
-
-    # for article in articles:
-    #   print(article['word-freq'])
-    #   print('---')
         print('text-processing ERROR:', e)
 
 
