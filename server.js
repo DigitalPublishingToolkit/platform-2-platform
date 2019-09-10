@@ -4,6 +4,7 @@ const app = express()
 const port = 3000
 const pg = require('pg')
 const pg_format = require('pg-format')
+const child_proc = require('child_process')
 
 const config = {
   user: process.env.DB_USER,
@@ -41,6 +42,42 @@ app.get('/api/articles/:id', (req, res, next) => {
         res.send(data)
       })
     })
+  } catch (err) {
+    next(err)
+  }
+})
+
+app.post('/api/send', (req, res, next) => {
+  try {
+    const article = req.body
+
+    const publishers = {
+      'amateur-cities': 'ac',
+      'online-open': 'oo',
+      'open-set-reader': 'osr'
+    }
+
+    // we take pipenv virtual env path, so all modules are found
+    // how do you get this PATH from some sys.env?
+
+    child_proc.exec('which python', (err, stdout, stderr) => {
+      if (err) throw err
+      console.log(stdout)
+    })
+
+    // const trigger = child_proc.spawn('/Users/af-etc/.local/share/virtualenvs/prototype-kEp0yEqi/bin/python', ['main.py', publishers[article.publisher], 'tv'])
+
+    // trigger.stdout.on('data', (data) => {
+    //   console.log('lala ---', data.toString())
+    // })
+
+    // function xx () {
+    //   return new Promise((resolve, reject) => {
+    //     spawn('python', ['main.py'], publishers[article.publisher], 'tv')
+    //   })
+    // }
+
+    res.send('hi!!')
   } catch (err) {
     next(err)
   }
