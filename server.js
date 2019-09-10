@@ -35,6 +35,13 @@ app.get('/api/articles/:id', (req, res, next) => {
       // })
 
       const query = pg_format('SELECT title, url, author, tags, mod, body FROM scraper WHERE publisher=%L', publisher)
+app.get('/api/article/random', (req, res, next) => {
+  try {
+    pool.connect((err, client, done) => {
+      if (err) throw err
+      dbclient = client
+
+      const query = pg_format('SELECT title, url, author, tags, mod, publisher, body FROM scraper ORDER BY random() limit 1')
       dbclient.query(query, (err, result) => {
         if (err) throw err
         console.log(result.rows)
