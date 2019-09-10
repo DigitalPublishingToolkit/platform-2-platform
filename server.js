@@ -66,8 +66,15 @@ app.get('/api/article/random', (req, res, next) => {
   }
 })
 
-app.post('/api/send', (req, res, next) => {
+app.post('/api/ask', (req, res, next) => {
   try {
+    // send an object like = {
+    //   title: true / false;
+    //   author: true / false;
+    //   tags: true / false;
+    //   body: true / false
+    // }
+
     const article = req.body
 
     const publishers = {
@@ -76,25 +83,22 @@ app.post('/api/send', (req, res, next) => {
       'open-set-reader': 'osr'
     }
 
-    // we take pipenv virtual env path, so all modules are found
-    // how do you get this PATH from some sys.env?
+    const trigger = child_proc.spawn(process.env.PY_ENV, ['main.py', publishers[article.publisher], 'tv'])
 
-    child_proc.exec('which python', (err, stdout, stderr) => {
-      if (err) throw err
-      console.log(stdout)
+    trigger.stdout.on('data', (data) => {
+      console.log('lala ---', data.toString())
+      res.send(data.toString())
     })
-
-    // const trigger = child_proc.spawn('/Users/af-etc/.local/share/virtualenvs/prototype-kEp0yEqi/bin/python', ['main.py', publishers[article.publisher], 'tv'])
-
-    // trigger.stdout.on('data', (data) => {
-    //   console.log('lala ---', data.toString())
-    // })
 
     // function xx () {
     //   return new Promise((resolve, reject) => {
     //     spawn('python', ['main.py'], publishers[article.publisher], 'tv')
     //   })
     // }
+  } catch (err) {
+    next(err)
+  }
+})
 
 app.post('/api/send', (req, res, next) => {
   try {
