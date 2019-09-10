@@ -24,17 +24,29 @@ app.get('/api/articles/:id', (req, res, next) => {
   try {
     const publisher = req.params.id
     pool.connect((err, client, done) => {
-      if (err) throw err 
+      if (err) throw err
       dbclient = client
 
-      const q_labels = pg_format('SELECT column_name FROM information_schema.columns WHERE table_name =%L', 'scraper')
+      // const q_labels = pg_format('SELECT column_name FROM information_schema.columns WHERE table_name =%L', 'scraper')
       // dbclient.query(q_labels, (err, result) => {
       //   if (err) throw err
       //   console.log(result)
       //   return result.rows
       // })
 
-      const query = pg_format('SELECT title, url, author, tags, mod, body FROM scraper WHERE publisher=%L', publisher)
+      const query = pg_format('SELECT title, url, author, tags, mod, publisher, body FROM scraper WHERE publisher=%L', publisher)
+      dbclient.query(query, (err, result) => {
+        if (err) throw err
+        console.log(result.rows)
+        const data = result.rows
+        res.send(data)
+      })
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
 app.get('/api/article/random', (req, res, next) => {
   try {
     pool.connect((err, client, done) => {
