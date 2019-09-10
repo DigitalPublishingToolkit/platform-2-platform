@@ -58,8 +58,7 @@ def main(name, articles):
   names = {'ac': 'amateur-cities',
            'oo': 'online-open',
            'os': 'open-set',
-           'osr': 'open-set-reader',
-           'kk': 'kirby-kit'}
+           'osr': 'open-set-reader'}
 
   publisher = names[name]
 
@@ -256,6 +255,7 @@ def main(name, articles):
       except Exception as e:
         print('text-processing ERROR:', e)
 
+  # 3. send suggestions
   elif (sys.argv[2] == 'tv'):
     # -- get article metadata from all pubs except the one passed as `arg`
     metadata = get_from_db.get_metadata(publisher)
