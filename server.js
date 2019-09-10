@@ -96,7 +96,58 @@ app.post('/api/send', (req, res, next) => {
     //   })
     // }
 
-    res.send('hi!!')
+app.post('/api/send', (req, res, next) => {
+  try {
+    // send object like = {
+    //   input_article: {
+    //     title: 'xx',
+    //     url: '',
+    //     publisher: 'xx'
+    //   },
+    //   match_article: {
+    //     title: 'xx',
+    //     url: '',
+    //     publisher: 'xx'
+    //   },
+    //   score: integer,
+    //   timestamp: Date.getTime()
+    // }
+
+    const data = req.body
+    console.log(data)
+
+    pool.connect((err, client, done) => {
+      const shouldAbort = err => {
+        if (err) {
+          console.error('Error in transaction', err.stack)
+          client.query('ROLLBACK', err => {
+            if (err) {
+              console.error('Error rolling back client', err.stack)
+            }
+            // release client back to pool
+            done()
+          })
+        }
+        return !!err
+      }
+
+      client.query('BEGIN', err => {
+        if (shouldAbort(err)) return
+        const query = 'INSERT INTO feedbacks (input_url, match_url, score, timestamp) VALUES ($1, $2, $2, $4)'
+        client.query(query, [], (err, result) => {
+          if (shouldAbort(err)) return
+
+          client.query('COMMIT', err => {
+            if (err) {
+              console.error('Error committing transaction', err.stack)
+            }
+            done()
+          })
+        })
+      })
+    })
+
+    res.send('sent! ok')
   } catch (err) {
     next(err)
   }
