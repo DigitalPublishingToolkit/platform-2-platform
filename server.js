@@ -9,7 +9,7 @@ const child_proc = require('child_process')
 const config = {
   user: process.env.DB_USER,
   database: process.env.DB_HOST,
-  password: process.env.DB_USER,
+  password: process.env.DB_PW,
   max: 10,
   ideTimeoutMillis: 30000
 }
