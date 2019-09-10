@@ -20,6 +20,25 @@ let dbclient
 // -- endpoints
 app.use(express.json())
 
+app.get('/api/articles', (req, res, next) => {
+  try {
+    pool.connect((err, client, done) => {
+      if (err) throw err
+      dbclient = client
+
+      const query = pg_format('SELECT title, url, author, tags, mod, publisher, body FROM scraper')
+      dbclient.query(query, (err, result) => {
+        if (err) throw err
+        console.log(result.rows)
+        const data = result.rows
+        res.send(data)
+      })
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
 app.get('/api/articles/:id', (req, res, next) => {
   try {
     const publisher = req.params.id
