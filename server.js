@@ -122,18 +122,12 @@ app.post('/api/ask', (req, res, next) => {
 app.post('/api/send', (req, res, next) => {
   try {
     // send object like = {
-    //   input_article: {
-    //     title: 'xx',
-    //     url: '',
-    //     publisher: 'xx'
-    //   },
-    //   match_article: {
-    //     title: 'xx',
-    //     url: '',
-    //     publisher: 'xx'
-    //   },
+    //   input_title: '',
+    //   input_pub: '',
+    //   match_title: '',
+    //   match_pub: '',
     //   score: integer,
-    //   timestamp: Date.getTime()
+    //   timestamp: new Date().toISOString()
     // }
 
     const data = req.body
