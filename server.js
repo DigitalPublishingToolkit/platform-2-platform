@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express = require('express')
 const app = express()
 const port = 3000
@@ -5,8 +6,9 @@ const pg = require('pg')
 const pg_format = require('pg-format')
 
 const config = {
-  user: 'andre',
-  database: 'make_it_public',
+  user: process.env.DB_USER,
+  database: process.env.DB_HOST,
+  password: process.env.DB_USER,
   max: 10,
   ideTimeoutMillis: 30000
 }
