@@ -64,7 +64,7 @@ def scrape_update(article, old_art_url):
       conn.close()
       print('db connection closed')
 
-#-- save to `article_metadata`
+#-- save to `metadata`
 def metadata(article):
   conn = None
   try:
@@ -76,7 +76,7 @@ def metadata(article):
     def query_exists():
       cur.execute(
           """
-          SELECT EXISTS (SELECT 1 FROM article_metadata WHERE title = %s)
+          SELECT EXISTS (SELECT 1 FROM metadata WHERE title = %s)
           """,
           (article['title'],))
 
@@ -84,24 +84,24 @@ def metadata(article):
 
     def metadata_update():
       query = """
-          UPDATE article_metadata
-          SET mod = %s, url = %s, title = %s, publisher = %s, abstract = %s, tags = %s, author = %s
+          UPDATE metadata
+          SET mod = %s, url = %s, title = %s, publisher = %s, abstract = %s, tags = %s, author = %s, body = %s
           WHERE title = %s;
           """
-      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['title']))
+      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], article['title']))
       conn.commit()
 
-      print('article_metadata has been UPDATED for publisher %s' % article['publisher'])
+      print('metadata has been UPDATED for publisher %s' % article['publisher'])
 
     def metadata_add():
       query = """
-          insert into article_metadata (mod, url, title, publisher, abstract, tags, author)
-          values (%s, %s, %s, %s, %s, %s, %s);
+          insert into metadata (mod, url, title, publisher, abstract, tags, author, body)
+          values (%s, %s, %s, %s, %s, %s, %s, %s);
           """
-      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author']))
+      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body']))
       conn.commit()
 
-      print('article_metadata has been ADDED for publisher %s' % article['publisher'])
+      print('metadata has been ADDED for publisher %s' % article['publisher'])
 
     if query_exists() is True:
       print(query_exists())
@@ -126,20 +126,45 @@ def tokens(article):
     conn = psycopg2.connect(**params)
     cur = conn.cursor()
 
-    # if table is not empty
-    # UPDATE table, else
-    # INSERT INTO table
-
     cur.execute(
         """
-        INSERT INTO tokens (title, publisher, tokens)
-        VALUES (%s, %s, %s);
+        INSERT INTO tokens (title, publisher, token_title, token_author, token_tags, token_body)
+        VALUES (%s, %s, %s, %s, %s, %s);
         """,
-        (article['title'], article['publisher'], article['tokens'])
+        (article['title'], article['publisher'], article['tokens']['title'], article['author'].lower(), article['tokens']['tags'], article['tokens']['body'])
     )
 
     conn.commit()
     # cur.close()
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
+#-- save to `feedback`
+def feedback(feedback):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        INSERT INTO feedback (input_title, input_publisher, match_title, match_publisher, score, timestamp)
+        VALUES (%s, %s, %s, %s, %s, %s);
+        """,
+        (feedback['input_title'], feedback['input_publisher'], feedback['match_title'], feedback['match_publisher'], feedback['score'], feedback['timestamp'])
+    )
+
+    conn.commit()
+    cur.close()
+
+    return {'result': 'feedback saved successfully'}
 
   except (Exception, psycopg2.DatabaseError) as error:
     print('db error:', error)
