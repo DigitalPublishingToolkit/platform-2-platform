@@ -5,51 +5,22 @@ import ac
 import oo
 import oss
 import osr
-from text_processing import text_cu, stop_words, unique_words, tags_filter
-import nltk
+import text_processing
 import save_to_db
 import get_from_db
 from datetime import timezone
 import ciso8601
-import gensim
-from gensim import corpora
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-from gensim.test.utils import get_tmpfile
-
-import collections
-import random
 import csv
-
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-#----
+# ---------------------------------------------------
 # run scraper with list of urls to check for scraping
 # - read urls from db
 # - check with db if url has been updated since last time,
 #   then run the scrape function on new urls &
 #   add them to the db, else do nothing
 #   maybe save the timestamp of latest sitemap checkup
-
-#-- shape data up
-def text_processing(article):
-  tags = tags_filter(article['tags'])
-  # print(tags)
-  article['tags'] = tags
-
-  corpus = ' '.join([article['title'], ' '.join(tags), article['body']])
-
-  words = text_cu(corpus)
-  words = nltk.word_tokenize(words)
-  words = stop_words(words, article)
-  words = unique_words(words, article)
-  article['tokens'] = words
-
-  print('text processing done')
-  # print(article)
-
-  return article
-
 
 #-- main
 articles = []
@@ -62,6 +33,8 @@ def main(name, articles):
 
   publisher = names[name]
 
+  # ----------------------
+  # 1. scraping
   if(sys.argv[2] == 'sc'):
     #-- get sitemap
     sitemap = {'ac': 'https://amateurcities.com/post-sitemap.xml',
@@ -206,9 +179,6 @@ def main(name, articles):
 
         # osr
         elif (name == 'osr'):
-          # data = requests.get(sitemap['osr']).json()
-          # obj = data['_pocketjoins']['map']
-
           def get_sitemap(path):
             slugs = []
             with open(path) as tsv:
@@ -221,14 +191,7 @@ def main(name, articles):
           slug_list = get_sitemap('store/open-set-articles.tsv')
           print(slug_list)
 
-          # index = []
-          # for item in obj:
-          #   for entry in item['_pocketjoins']['map']:
-          #     if (entry['publish'] is True):
-          #       index.append(entry['_pocketindex'])
-
           if mod_list['count'] >= 0 and mod_list['action'] == 'add':
-            # for slug in index:
             for slug in slug_list:
               article = {}
               osr.scraper(s, slug, article)
@@ -240,92 +203,36 @@ def main(name, articles):
         else:
           print('mod_list empty: nothing to scrape')
 
-    #-- scrape
+    #-- do the scraping
     scrape(sys.argv[1], publisher, mod_list, sitemap)
 
-  # 2. process
+  # ------------------
+  # 2. text-processing
   elif (sys.argv[2] == 'tx'):
     articles = get_from_db.get_body(publisher)
 
     for item in articles:
       try:
-        article = text_processing(item)
-        save_to_db.metadata(article)
-        save_to_db.tokens(article)
+        article_metadata = {}
+        metadata = text_processing.process_metadata(item, article_metadata)
+        save_to_db.metadata(metadata)
+
+        article_tokens = {}
+        article_tk = {}
+        text_processing.process_tokens(item, article_tk)
+        article_tokens['title'] = item['title']
+        article_tokens['author'] = item['author']
+        article_tokens['publisher'] = item['publisher']
+        article_tokens['tokens'] = article_tk
+        save_to_db.tokens(article_tokens)
       except Exception as e:
         print('text-processing ERROR:', e)
 
+  # -------------------
   # 3. send suggestions
   elif (sys.argv[2] == 'tv'):
-    # -- get article metadata from all pubs except the one passed as `arg`
-    metadata = get_from_db.get_metadata(publisher)
-    print(metadata)
-
-    # -- get corpuses from all pubs except the one passed as `arg`
-    input_corpus = get_from_db.get_corpus(publisher)
-    print(input_corpus['index'], len(input_corpus['data']))
-
-    dictionary = corpora.Dictionary(input_corpus['data'])
-    # print(dictionary)
-
-    corpus = [dictionary.doc2bow(text) for text in input_corpus['data']]
-    # print(corpus)
-
-    documents = [TaggedDocument(doc, [i]) for i, doc in enumerate(input_corpus['data'])]
-    # print(documents)
-
-    # setup model
-    model = Doc2Vec(dm=1, vector_size=50, window=2, min_count=2, workers=4, epochs=40)
-    # model = Doc2Vec(size=100, window=10, min_count=5, workers=11, alpha=0.025, iter=20)
-
-    pubs = ['amateur-cities', 'online-open', 'open-set-reader']
-    pubs.remove(publisher)
-    pubs = '_'.join(pubs)
-    print('PUBS', pubs)
-
-    # save model to disk
-    fn_model = get_tmpfile(pubs)
-    model.save(fn_model)
-
-    model = Doc2Vec.load(fn_model)
-    model.build_vocab(documents)
-    model.train(documents, total_examples=model.corpus_count, epochs=model.epochs)
-
-    # check if model is giving good results:
-    # check trained docs with themselves,
-    # and check percentage of "sameness"
-    ranks = []
-    second_ranks = []
-    for doc_id in range(len(documents)):
-      inferred_vector = model.infer_vector(documents[doc_id].words)
-      sims = model.docvecs.most_similar([inferred_vector], topn=len(model.docvecs))
-      rank = [docid for docid, sim in sims].index(doc_id)
-      ranks.append(rank)
-      second_ranks.append(sims[1])
-
-    print('-- MOST SIMILAR DOC')
-    print('Document ({}): «{}»\n'.format(doc_id, ' '.join(documents[doc_id].words)))
-    print(u'SIMILAR/DISSIMILAR DOCS PER MODEL %s:\n' % model)
-    for label, index in [('MOST', 0), ('SECOND-MOST', 1), ('MEDIAN', len(sims) // 2), ('LEAST', len(sims) - 1)]:
-      title = metadata[documents[index].tags[0]]['title']
-      url = metadata[documents[index].tags[0]]['url']
-      abstract = metadata[documents[index].tags[0]]['abstract']
-      print(u'- %s\n- %s\n- %s\n- %s %s: «%s»\n' % (title, url, abstract, label, sims[index], ' '.join(documents[sims[index][0]].words)))
-
-    # # Pick a random document from the corpus and infer a vector from the model
-    # doc_id = random.randint(0, len(documents) - 1)
-
-    # # Compare and print the second-most-similar document
-    # print('-- SECOND-MOST-SIMILAR DOCUMENT')
-    # dtitle = articles[documents[doc_id].tags[0]]['title']
-    # durl = articles[documents[doc_id].tags[0]]['url']
-    # dabstract = articles[documents[doc_id].tags[0]]['abstract']
-    # print('Train Document ({}):\n- {}\n- {}\n- {}\n«{}»\n'.format(doc_id, dtitle, durl, dabstract, ' '.join(documents[doc_id].words)))
-    # sim_id = second_ranks[doc_id]
-    # stitle = articles[documents[sim_id[0]].tags[0]]['title']
-    # surl = articles[documents[sim_id[0]].tags[0]]['url']
-    # sabstract = articles[documents[sim_id[0]].tags[0]]['abstract']
-    # print('Similar Document {}:\n- {}\n- {}\n- {}\n«{}»\n'.format(sim_id, stitle, surl, sabstract, ' '.join(documents[sim_id[0]].words)))
+    print('tv')
+    # ask.ask()
 
 
 if __name__ == '__main__':
