@@ -8,6 +8,30 @@ def get_flat_list(data):
   flat_list = [l[0] for l in data]
   return flat_list
 
+def get_labels(cur, table):
+  cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = '%s';" % (table,))
+  labels = cur.fetchall()
+  labels = get_flat_list(labels)
+  return labels
+
+def make_article(items, labels, article):
+  for item in article:
+    try:
+      items.append(item.isoformat())
+    except Exception:
+      items.append(item)
+
+  article = dict(zip(labels, items))
+  return article
+
+def make_index(index, labels, values):
+  for article in values:
+    # convert type objects to string
+    items = []
+    article = make_article(items, labels, article)
+    index.append(article)
+  return index
+
 # + + +
 
 #-- get `article.mod` && `article.url` from `scraper`
@@ -45,7 +69,6 @@ def get_mod(publisher):
       conn.close()
       print('db connection closed')
 
-
 #-- get `article.body` data from `scraper`
 def get_body(publisher):
   conn = None
@@ -56,9 +79,7 @@ def get_body(publisher):
     cur = conn.cursor()
 
     #-- labels
-    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'scraper';")
-    labels = cur.fetchall()
-    labels = get_flat_list(labels)
+    labels = get_labels(cur, 'scraper')
 
     #-- values
     cur.execute("SET TIME ZONE 'UTC';")
@@ -99,30 +120,16 @@ def get_allarticles():
     cur = conn.cursor()
 
     #-- labels
-    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'metadata';")
-    labels = cur.fetchall()
-    labels = get_flat_list(labels)
+    labels = get_labels(cur, 'metadata')
 
     #-- values
-    cur.execute("SET TIME ZONE 'UTC';")
-    cur.execute("SELECT %s FROM metadata;" % (', '.join(labels),))
+    cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata;" % (', '.join(labels),))
     values = cur.fetchall()
 
-    index = []
-    for article in values:
-
-      # convert type objects into string
-      art = []
-      for item in article:
-        try:
-          art.append(item.isoformat())
-        except Exception:
-          art.append(item)
-
-      article = dict(zip(labels, art))
-      index.append(article)
-
     cur.close()
+
+    index = []
+    make_index(index, labels, values)
     return index
 
   except (Exception, psycopg2.DatabaseError) as error:
@@ -142,31 +149,15 @@ def get_pub_articles(publisher):
     cur = conn.cursor()
 
     #-- labels
-    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'metadata';")
-    labels = cur.fetchall()
-    labels = get_flat_list(labels)
-    print(labels)
+    labels = get_labels(cur, 'metadata')
 
     #-- values
-    cur.execute("SET TIME ZONE 'UTC';")
-    cur.execute("SELECT %s FROM metadata WHERE publisher = '%s';" % (', '.join(labels), publisher,))
+    cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata WHERE publisher = '%s';" % (', '.join(labels), publisher,))
     values = cur.fetchall()
+    cur.close()
 
     index = []
-    for article in values:
-
-      # convert type objects into string
-      art = []
-      for item in article:
-        try:
-          art.append(item.isoformat())
-        except Exception:
-          art.append(item)
-
-      article = dict(zip(labels, art))
-      index.append(article)
-
-    cur.close()
+    make_index(index, labels, values)
     return index
 
   except (Exception, psycopg2.DatabaseError) as error:
@@ -193,30 +184,15 @@ def get_metadata(publisher):
     pubs = tuple(pubs)
 
     #-- labels
-    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'metadata';")
-    labels = cur.fetchall()
-    labels = get_flat_list(labels)
+    labels = get_labels(cur, 'metadata')
 
     #-- values
-    cur.execute("SET TIME ZONE 'UTC';")
-    cur.execute("SELECT DISTINCT %s FROM metadata WHERE publisher IN %s;" % (', '.join(labels), pubs))
+    cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT %s FROM metadata WHERE publisher IN %s;" % (', '.join(labels), pubs))
     values = cur.fetchall()
+    cur.close()
 
     index = []
-    for article in values:
-
-      # convert type objects into string
-      art = []
-      for item in article:
-        try:
-          art.append(item.isoformat())
-        except Exception:
-          art.append(item)
-
-      article = dict(zip(labels, art))
-      index.append(article)
-
-    cur.close()
+    make_index(index, labels, values)
     return index
 
   except (Exception, psycopg2.DatabaseError) as error:
@@ -236,31 +212,16 @@ def get_random_article():
     cur = conn.cursor()
 
     #-- labels
-    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'metadata';")
-    labels = cur.fetchall()
-    labels = get_flat_list(labels)
+    labels = get_labels(cur, 'metadata')
 
     #-- values
-    cur.execute("SET TIME ZONE 'UTC';")
-    cur.execute("SELECT %s FROM metadata ORDER BY random() limit 1;" % (', '.join(labels),))
-    values = cur.fetchall()
-
-    index = []
-    for article in values:
-
-      # convert type objects into string
-      art = []
-      for item in article:
-        try:
-          art.append(item.isoformat())
-        except Exception:
-          art.append(item)
-
-      article = dict(zip(labels, art))
-      index.append(article)
-
+    cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata ORDER BY random() limit 1;" % (', '.join(labels),))
+    article = cur.fetchone()
     cur.close()
-    return index
+
+    items = []
+    article = make_article(items, labels, article)
+    return article
 
   except (Exception, psycopg2.DatabaseError) as error:
     print('db error:', error)
@@ -269,6 +230,7 @@ def get_random_article():
       conn.close()
       print('db connection closed')
 
+#-- get specigic article (id)
 def get_specific_article(article_id, labels):
   conn = None
   try:
@@ -279,27 +241,19 @@ def get_specific_article(article_id, labels):
 
     #-- labels
     if labels is None:
-      cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'metadata';")
-      labels = cur.fetchall()
-      labels = get_flat_list(labels)
+      labels = get_labels(cur, 'metadata')
     else:
       labels = labels
 
+    print(labels)
+
     #-- values
-    cur.execute("SET TIME ZONE 'UTC';")
-    cur.execute("SELECT %s FROM metadata WHERE id = '%s';" % (', '.join(labels), article_id))
+    cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata WHERE id = '%s';" % (', '.join(labels), article_id))
     article = cur.fetchone()
-
-    # convert type objects into string
-    art = []
-    for item in article:
-      try:
-        art.append(item.isoformat())
-      except Exception:
-        art.append(item)
-
-    article = dict(zip(labels, art))
     cur.close()
+
+    items = []
+    article = make_article(items, labels, article)
     return article
 
   except (Exception, psycopg2.DatabaseError) as error:
