@@ -26,6 +26,7 @@ class Ask(Resource):
   # js object = {
   #   article_title: '',
   #   article_publisher: '',
+  #   article_id: integer,
   #   tokens: {
   #     title: Boolean,
   #     author: Boolean,
