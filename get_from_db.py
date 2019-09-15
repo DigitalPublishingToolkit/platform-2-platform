@@ -99,13 +99,13 @@ def get_allarticles():
     cur = conn.cursor()
 
     #-- labels
-    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'scraper';")
+    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'metadata';")
     labels = cur.fetchall()
     labels = get_flat_list(labels)
 
     #-- values
     cur.execute("SET TIME ZONE 'UTC';")
-    cur.execute("SELECT %s FROM scraper;" % (', '.join(labels),))
+    cur.execute("SELECT %s FROM metadata;" % (', '.join(labels),))
     values = cur.fetchall()
 
     index = []
@@ -132,7 +132,7 @@ def get_allarticles():
       conn.close()
       print('db connection closed')
 
-#-- get all articles from publisher
+#-- get metadata from all pubs except the one passed in the arg
 def get_pub_articles(publisher):
   conn = None
   try:
@@ -142,14 +142,14 @@ def get_pub_articles(publisher):
     cur = conn.cursor()
 
     #-- labels
-    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'scraper';")
+    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'metadata';")
     labels = cur.fetchall()
     labels = get_flat_list(labels)
     print(labels)
 
     #-- values
     cur.execute("SET TIME ZONE 'UTC';")
-    cur.execute("SELECT %s FROM scraper WHERE publisher = '%s';" % (', '.join(labels), publisher,))
+    cur.execute("SELECT %s FROM metadata WHERE publisher = '%s';" % (', '.join(labels), publisher,))
     values = cur.fetchall()
 
     index = []
@@ -226,7 +226,7 @@ def get_metadata(publisher):
       conn.close()
       print('db connection closed')
 
-#-- get all articles from publisher
+#-- get random article from publisher
 def get_random_article():
   conn = None
   try:
@@ -236,13 +236,13 @@ def get_random_article():
     cur = conn.cursor()
 
     #-- labels
-    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'scraper';")
+    cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'metadata';")
     labels = cur.fetchall()
     labels = get_flat_list(labels)
 
     #-- values
     cur.execute("SET TIME ZONE 'UTC';")
-    cur.execute("SELECT %s FROM scraper ORDER BY random() limit 1;" % (', '.join(labels),))
+    cur.execute("SELECT %s FROM metadata ORDER BY random() limit 1;" % (', '.join(labels),))
     values = cur.fetchall()
 
     index = []
@@ -279,7 +279,7 @@ def get_specific_article(article_id, labels):
 
     #-- labels
     if labels is None:
-      cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'scraper';")
+      cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'metadata';")
       labels = cur.fetchall()
       labels = get_flat_list(labels)
     else:
@@ -287,7 +287,7 @@ def get_specific_article(article_id, labels):
 
     #-- values
     cur.execute("SET TIME ZONE 'UTC';")
-    cur.execute("SELECT %s FROM scraper WHERE id = '%s';" % (', '.join(labels), article_id))
+    cur.execute("SELECT %s FROM metadata WHERE id = '%s';" % (', '.join(labels), article_id))
     article = cur.fetchone()
 
     # convert type objects into string
