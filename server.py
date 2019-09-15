@@ -19,8 +19,8 @@ class Articles_Publisher(Resource):
 
 class Articles_Random(Resource):
   def get(self):
-    articles = get_from_db.get_random_article()
-    return articles
+    article = get_from_db.get_random_article()
+    return article
 
 class Ask(Resource):
   # js object = {
