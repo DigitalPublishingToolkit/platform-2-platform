@@ -213,17 +213,21 @@ def main(name, articles):
 
     for item in articles:
       try:
-        article_metadata = {}
-        metadata = text_processing.process_metadata(item, article_metadata)
-        save_to_db.metadata(metadata)
+        # db.metadata
+        # article_metadata = {}
+        # metadata = text_processing.process_metadata(item, article_metadata)
+        # save_to_db.metadata(metadata)
 
+        # db.tokens
         article_tokens = {}
         article_tk = {}
         text_processing.process_tokens(item, article_tk)
         article_tokens['title'] = item['title']
         article_tokens['author'] = item['author']
         article_tokens['publisher'] = item['publisher']
+        article_tokens['word_freq'] = article_tk['word_freq']
         article_tokens['tokens'] = article_tk
+
         save_to_db.tokens(article_tokens)
       except Exception as e:
         print('text-processing ERROR:', e)

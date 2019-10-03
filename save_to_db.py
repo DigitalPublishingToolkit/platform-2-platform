@@ -126,12 +126,17 @@ def tokens(article):
     conn = psycopg2.connect(**params)
     cur = conn.cursor()
 
+    # https://stackoverflow.com/a/11963002 
+    # insert an array of composite-types is done through
+    # `... VALUES(..., %s::word_freq[]);`
+    # eg by casting the %s to the composite type *as* an array!
+
     cur.execute(
         """
-        INSERT INTO tokens (title, publisher, token_title, token_author, token_tags, token_body)
-        VALUES (%s, %s, %s, %s, %s, %s);
+        INSERT INTO tokens (title, publisher, token_title, token_author, token_tags, token_body, word_freq)
+        VALUES (%s, %s, %s, %s, %s, %s, %s::word_freq[]);
         """,
-        (article['title'], article['publisher'], article['tokens']['title'], article['author'].lower(), article['tokens']['tags'], article['tokens']['body'])
+        (article['title'], article['publisher'], article['tokens']['title'], article['author'].lower(), article['tokens']['tags'], article['tokens']['body'], article['word_freq'])
     )
 
     conn.commit()

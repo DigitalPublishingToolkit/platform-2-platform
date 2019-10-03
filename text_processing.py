@@ -2,6 +2,7 @@ from collections import defaultdict
 import contractions
 from nltk import word_tokenize
 from nltk.corpus import stopwords
+from nltk import ngrams, FreqDist
 from nltk import pos_tag
 import re
 
@@ -88,6 +89,36 @@ def tags_filter(tags):
 
   return taglist
 
+#-- word-frequency
+def word_freq(corpus, article):
+  wordfreq = []
+  wf = FreqDist(corpus)
+
+  for word, freq in wf.most_common():
+    # (word-frequency / body-tokens-length ) * 100
+    rel = (freq / len(corpus)) * 100
+    wwf = word, freq, rel
+
+    wordfreq.append(wwf)
+
+  return wordfreq
+
+#-- n-word phrases frequency
+def phrases_freq(text, size, article):
+  pf = dict()
+  pf = FreqDist(ngrams(text, size))
+
+  article[str(size) + 'w-phrases'] = pf.most_common()
+
+# def relevancy(word_freq, article):
+  # relevancy = 0
+  # addup = 0
+  # for word in word_freq:
+  #   addup += word[2]
+  #   relevancy = addup / len(word_freq)
+
+  # article['relevancy'] = relevancy
+
 def process_metadata(input, article):
   article = {
     "mod": input['mod'],
@@ -125,6 +156,8 @@ def process_tokens(input, article):
 
   article['title'] = tokenize(input['title'], False)
   article['body'] = tokenize(input['body'], True)
+  corpus = tokenize(input['body'], False)
+  article['word_freq'] = word_freq(corpus, article)
 
   print('text processing done')
   return article

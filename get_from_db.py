@@ -1,5 +1,7 @@
 import psycopg2
+from psycopg2.extras import register_composite
 from config import config
+from collections import namedtuple
 
 #-- utils
 
@@ -139,7 +141,57 @@ def get_allarticles():
       conn.close()
       print('db connection closed')
 
-#-- get metadata from all pubs except the one passed in the arg
+#-- get all articles
+def get_allarticles_word_freq():
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    register_composite('word_freq', cur)
+
+    #-- values
+    cur.execute("SET TIME ZONE 'UTC'; SELECT title, publisher, word_freq::word_freq[] FROM tokens;")
+    values = cur.fetchall()
+    cur.close()
+
+    labels = ['title', 'publisher', 'word_freq']
+    index = []
+
+    for article in values:
+      # convert type objects to string
+      items = []
+
+      for item in article:
+        try:
+          wf = []
+          for value in item:
+            cluster = {
+              'word': value.word,
+              'frequency': str(value.frequency),
+              'relativity': str(value.relativity)
+            }
+            wf.append(cluster)
+
+          items.append(wf)
+        except Exception:
+          items.append(item)
+
+      article = dict(zip(labels, items))
+      index.append(article)
+
+    return index
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
+#-- get metadata from publisher
 def get_pub_articles(publisher):
   conn = None
   try:
@@ -158,6 +210,56 @@ def get_pub_articles(publisher):
 
     index = []
     make_index(index, labels, values)
+    return index
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
+#-- get pub word_freq
+def get_pub_articles_word_freq(publisher):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    register_composite('word_freq', cur)
+
+    #-- values
+    cur.execute("SET TIME ZONE 'UTC'; SELECT title, publisher, word_freq::word_freq[] FROM tokens WHERE publisher = '%s';" % (publisher,))
+    values = cur.fetchall()
+    cur.close()
+
+    labels = ['title', 'publisher', 'word_freq']
+    index = []
+
+    for article in values:
+      # convert type objects to string
+      items = []
+
+      for item in article:
+        try:
+          wf = []
+          for value in item:
+            cluster = {
+              'word': value.word,
+              'frequency': str(value.frequency),
+              'relativity': str(value.relativity)
+            }
+            wf.append(cluster)
+
+          items.append(wf)
+        except Exception:
+          items.append(item)
+
+      article = dict(zip(labels, items))
+      index.append(article)
+
     return index
 
   except (Exception, psycopg2.DatabaseError) as error:

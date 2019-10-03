@@ -12,9 +12,19 @@ class Articles_All(Resource):
     articles = get_from_db.get_allarticles()
     return articles
 
+class Articles_All_WF(Resource):
+  def get(self):
+    articles = get_from_db.get_allarticles_word_freq()
+    return articles
+
 class Articles_Publisher(Resource):
   def get(self, publisher):
     articles = get_from_db.get_pub_articles(publisher)
+    return articles
+
+class Articles_Publisher_WF(Resource):
+  def get(self, publisher):
+    articles = get_from_db.get_pub_articles_word_freq(publisher)
     return articles
 
 class Articles_Random(Resource):
@@ -70,7 +80,9 @@ class Send(Resource):
 
 
 api.add_resource(Articles_All, '/api/articles')
+api.add_resource(Articles_All_WF, '/api/articles-wf')
 api.add_resource(Articles_Publisher, '/api/articles/<string:publisher>')
+api.add_resource(Articles_Publisher_WF, '/api/articles-wf/<string:publisher>')
 api.add_resource(Articles_Random, '/api/article/random')
 api.add_resource(Ask, '/api/ask')
 api.add_resource(Send, '/api/send')
