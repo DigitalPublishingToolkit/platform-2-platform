@@ -1,6 +1,9 @@
 #---- ac
 import ciso8601
 from bs4 import BeautifulSoup
+import os
+import requests
+import shutil
 
 def scraper(s, mod, url, publisher, article):
   art = s.get(url, allow_redirects=False)
@@ -67,6 +70,36 @@ def scraper(s, mod, url, publisher, article):
       article['body'] = copy
     except Exception as e:
       print('body parser', e)
+
+  #-- imgs
+  img_urls = []
+  for img in soup.find_all('img'):
+    img_urls.append(img['src'])
+
+  img_store = []
+  #-- write imgs
+  for url in img_urls:
+    # https://stackoverflow.com/a/7253830
+    fn = url.rsplit('/', 1)[-1]
+
+    dir_path = './imgs/amateur-cities'
+
+    if not os.path.exists(dir_path):
+      os.makedirs(dir_path)
+
+    # https://stackoverflow.com/a/18043472
+    r = requests.get(url, stream=True)
+    if not os.path.exists(dir_path + '/' + fn):
+      with open(dir_path + '/' + fn, 'wb') as outf:
+        shutil.copyfileobj(r.raw, outf)
+      del r
+    else:
+      print('image already exists!', dir_path + '/' + fn)
+
+    img_store.append(dir_path + '/' + fn)
+
+  article['images'] = img_store
+  print(article['images'])
 
   print('scraping done...')
   return article
