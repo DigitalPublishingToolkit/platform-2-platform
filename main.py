@@ -213,14 +213,23 @@ def main(name, articles):
 
     for item in articles:
       try:
-        # db.metadata
-        # article_metadata = {}
-        # metadata = text_processing.process_metadata(item, article_metadata)
-        # save_to_db.metadata(metadata)
+        article_metadata = {}
 
-        # db.tokens
+        metadata = text_processing.process_metadata(item, article_metadata)
+        save_to_db.metadata(metadata)
+      except Exception as e:
+        print('text-processing ERROR:', e)
+
+  # ------------------
+  # 3. text-processing
+  elif (sys.argv[2] == 'tk'):
+    articles = get_from_db.get_body(publisher)
+
+    for item in articles:
+      try:
         article_tokens = {}
         article_tk = {}
+
         text_processing.process_tokens(item, article_tk)
         article_tokens['title'] = item['title']
         article_tokens['author'] = item['author']
@@ -233,7 +242,7 @@ def main(name, articles):
         print('text-processing ERROR:', e)
 
   # -------------------
-  # 3. send suggestions
+  # 4. send suggestions
   elif (sys.argv[2] == 'tv'):
     print('tv')
     # ask.ask()

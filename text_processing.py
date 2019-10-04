@@ -126,7 +126,8 @@ def process_metadata(input, article):
     "title": input['title'],
     "publisher": input['publisher'],
     "abstract": input['abstract'],
-    "author": input['author']
+    "author": input['author'],
+    "images": input['images']
   }
 
   tags = tags_filter(input['tags'])

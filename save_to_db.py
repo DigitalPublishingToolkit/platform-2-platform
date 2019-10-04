@@ -16,10 +16,10 @@ def scrape(article):
 
     cur.execute(
         """
-        INSERT INTO scraper (mod, url, title, publisher, abstract, tags, author, body)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+        INSERT INTO scraper (mod, url, title, publisher, abstract, tags, author, body, images)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
         """,
-        (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'])
+        (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], article['images'])
     )
 
     conn.commit()
@@ -47,10 +47,10 @@ def scrape_update(article, old_art_url):
     cur.execute(
         """
         UPDATE scraper
-        SET mod = %s, url = %s, title = %s, publisher = %s, abstract = %s, tags = %s, author = %s, body = %s
+        SET mod = %s, url = %s, title = %s, publisher = %s, abstract = %s, tags = %s, author = %s, body = %s, image = %s
         WHERE url = %s;
         """,
-        (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], old_art_url)
+        (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], article['images'], old_art_url)
     )
 
     conn.commit()
@@ -85,20 +85,20 @@ def metadata(article):
     def metadata_update():
       query = """
           UPDATE metadata
-          SET mod = %s, url = %s, title = %s, publisher = %s, abstract = %s, tags = %s, author = %s, body = %s
+          SET mod = %s, url = %s, title = %s, publisher = %s, abstract = %s, tags = %s, author = %s, body = %s, images = %s
           WHERE title = %s;
           """
-      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], article['title']))
+      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], article['images'], article['title']))
       conn.commit()
 
       print('metadata has been UPDATED for publisher %s' % article['publisher'])
 
     def metadata_add():
       query = """
-          insert into metadata (mod, url, title, publisher, abstract, tags, author, body)
-          values (%s, %s, %s, %s, %s, %s, %s, %s);
+          insert into metadata (mod, url, title, publisher, abstract, tags, author, body, images)
+          values (%s, %s, %s, %s, %s, %s, %s, %s, %s);
           """
-      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body']))
+      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], article['images']))
       conn.commit()
 
       print('metadata has been ADDED for publisher %s' % article['publisher'])
