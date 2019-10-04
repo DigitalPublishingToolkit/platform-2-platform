@@ -52,7 +52,7 @@ def pos(corpus, article):
 def tags_filter(tags):
   tags_master = ['commons',
                  'labour',
-                 'finance and money'
+                 'finance and money',
                  'commercialization',
                  'commodification',
                  'capitalism',
@@ -85,7 +85,7 @@ def tags_filter(tags):
   taglist = []
   for tag in tags:
     if tag.lower() in tags_master:
-      taglist.append(tag)
+      taglist.append(tag.lower())
 
   return taglist
 
