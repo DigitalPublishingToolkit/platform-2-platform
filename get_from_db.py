@@ -1,7 +1,6 @@
 import psycopg2
 from psycopg2.extras import register_composite
 from config import config
-from collections import namedtuple
 
 #-- utils
 
@@ -15,6 +14,69 @@ def get_labels(cur, table):
   labels = cur.fetchall()
   labels = get_flat_list(labels)
   return labels
+
+def get_feedback_matches(cur):
+  cur.execute("""
+    SET TIME ZONE 'UTC';
+    SELECT
+    metadata.id input_id,
+    metadata.title,
+    feedback.id match_id,
+    feedback.input_title,
+    feedback.match_title,
+    feedback.match_publisher,
+    feedback.score,
+    feedback.timestamp
+    FROM metadata
+    INNER JOIN feedback ON metadata.title = feedback.input_title;
+    """)
+
+  cross_q = cur.fetchall()
+  feedback_q = [list(item) for item in cross_q]
+
+  feedbacks = []
+  for match in feedback_q:
+    feedback = {'input_id': match[0],
+                'match_title': match[4],
+                'match_publisher': match[5],
+                'score': match[6],
+                'timestamp': match[7].isoformat()}
+
+    feedbacks.append(feedback)
+
+  return feedbacks
+
+def get_feedback_match(cur, input_id):
+  cur.execute("""
+    SET TIME ZONE 'UTC';
+    SELECT
+    metadata.id input_id,
+    metadata.title,
+    feedback.id match_id,
+    feedback.input_title,
+    feedback.match_title,
+    feedback.match_publisher,
+    feedback.score,
+    feedback.timestamp
+    FROM metadata
+    INNER JOIN feedback ON metadata.title = feedback.input_title
+    WHERE metadata.id = %s;
+    """ % (input_id,))
+
+  cross_q = cur.fetchall()
+  feedback_q = [list(item) for item in cross_q]
+
+  feedbacks = []
+  for match in feedback_q:
+    feedback = {'input_id': match[0],
+                'match_title': match[4],
+                'match_publisher': match[5],
+                'score': match[6],
+                'timestamp': match[7].isoformat()}
+
+    feedbacks.append(feedback)
+
+  return feedbacks
 
 def make_article(items, labels, article):
   for item in article:
@@ -90,7 +152,6 @@ def get_body(publisher):
 
     index = []
     for article in values:
-
       # convert type objects into string
       art = []
       for item in article:
@@ -121,16 +182,28 @@ def get_allarticles():
     conn = psycopg2.connect(**params)
     cur = conn.cursor()
 
-    #-- labels
     labels = get_labels(cur, 'metadata')
 
-    #-- values
     cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata;" % (', '.join(labels),))
     values = cur.fetchall()
-
+    feedbacks = get_feedback_matches(cur)
     cur.close()
 
+    def make_index(index, labels, values):
+      for article in values:
+        matches = [x for x in feedbacks if x['input_id'] == article[7]]
+
+        article = list(article)
+        article.append(matches)
+
+        items = []
+        article = make_article(items, labels, article)
+        index.append(article)
+      return index
+
     index = []
+    labels.append('matches')
+
     make_index(index, labels, values)
     return index
 
@@ -141,7 +214,7 @@ def get_allarticles():
       conn.close()
       print('db connection closed')
 
-#-- get all articles
+#-- get all word-frequency
 def get_allarticles_word_freq():
   conn = None
   try:
@@ -168,11 +241,9 @@ def get_allarticles_word_freq():
         try:
           wf = []
           for value in item:
-            cluster = {
-              'word': value.word,
-              'frequency': str(value.frequency),
-              'relativity': str(value.relativity)
-            }
+            cluster = {'word': value.word,
+                       'frequency': str(value.frequency),
+                       'relativity': str(value.relativity)}
             wf.append(cluster)
 
           items.append(wf)
@@ -191,7 +262,7 @@ def get_allarticles_word_freq():
       conn.close()
       print('db connection closed')
 
-#-- get metadata from publisher
+#-- get articles from publisher
 def get_pub_articles(publisher):
   conn = None
   try:
@@ -200,15 +271,29 @@ def get_pub_articles(publisher):
     conn = psycopg2.connect(**params)
     cur = conn.cursor()
 
-    #-- labels
     labels = get_labels(cur, 'metadata')
 
-    #-- values
     cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata WHERE publisher = '%s';" % (', '.join(labels), publisher,))
     values = cur.fetchall()
+
+    feedbacks = get_feedback_matches(cur)
     cur.close()
 
+    def make_index(index, labels, values):
+      for article in values:
+        matches = [x for x in feedbacks if x['input_id'] == article[7]]
+
+        article = list(article)
+        article.append(matches)
+
+        items = []
+        article = make_article(items, labels, article)
+        index.append(article)
+      return index
+
     index = []
+    labels.append('matches')
+
     make_index(index, labels, values)
     return index
 
@@ -230,7 +315,6 @@ def get_pub_articles_word_freq(publisher):
 
     register_composite('word_freq', cur)
 
-    #-- values
     cur.execute("SET TIME ZONE 'UTC'; SELECT title, publisher, word_freq::word_freq[] FROM tokens WHERE publisher = '%s';" % (publisher,))
     values = cur.fetchall()
     cur.close()
@@ -246,11 +330,9 @@ def get_pub_articles_word_freq(publisher):
         try:
           wf = []
           for value in item:
-            cluster = {
-              'word': value.word,
-              'frequency': str(value.frequency),
-              'relativity': str(value.relativity)
-            }
+            cluster = {'word': value.word,
+                       'frequency': str(value.frequency),
+                       'relativity': str(value.relativity)}
             wf.append(cluster)
 
           items.append(wf)
@@ -269,7 +351,7 @@ def get_pub_articles_word_freq(publisher):
       conn.close()
       print('db connection closed')
 
-#-- get tokens from all pubs except the one passed in the arg
+#-- get metadata from each publisher
 def get_metadata(publisher):
   conn = None
   try:
@@ -285,12 +367,11 @@ def get_metadata(publisher):
     pubs.remove(publisher)
     pubs = tuple(pubs)
 
-    #-- labels
     labels = get_labels(cur, 'metadata')
 
-    #-- values
     cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT %s FROM metadata WHERE publisher IN %s;" % (', '.join(labels), pubs))
     values = cur.fetchall()
+
     cur.close()
 
     index = []
@@ -313,13 +394,16 @@ def get_random_article():
     conn = psycopg2.connect(**params)
     cur = conn.cursor()
 
-    #-- labels
     labels = get_labels(cur, 'metadata')
 
-    #-- values
     cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata ORDER BY random() limit 1;" % (', '.join(labels),))
     article = cur.fetchone()
+    feedbacks = get_feedback_match(cur, article[7])
     cur.close()
+
+    labels.append('matches')
+    article = list(article)
+    article.append(feedbacks)
 
     items = []
     article = make_article(items, labels, article)
@@ -332,7 +416,7 @@ def get_random_article():
       conn.close()
       print('db connection closed')
 
-#-- get specigic article (id)
+#-- get specific article (id)
 def get_specific_article(article_id, labels):
   conn = None
   try:
@@ -349,7 +433,6 @@ def get_specific_article(article_id, labels):
 
     print(labels)
 
-    #-- values
     cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata WHERE id = '%s';" % (', '.join(labels), article_id))
     article = cur.fetchone()
     cur.close()
@@ -394,10 +477,8 @@ def get_corpus(publisher, **labels):
     tokens = cur.fetchall()
     tokens = get_flat_list(tokens)
 
-    results = {
-      'index': index,
-      'data': tokens
-    }
+    results = {'index': index,
+               'data': tokens}
 
     cur.close()
     return results
