@@ -1,5 +1,6 @@
 import psycopg2
 from config import config
+import json
 
 # + + +
 
@@ -133,14 +134,14 @@ def tokens(article):
 
     cur.execute(
         """
-        INSERT INTO tokens (title, publisher, token_title, token_author, token_tags, token_body, word_freq)
-        VALUES (%s, %s, %s, %s, %s, %s, %s::word_freq[]);
+        INSERT INTO tokens (title, publisher, token_title, token_author, token_tags, token_body, word_freq, two_word_freq, three_word_freq)
+        VALUES (%s, %s, %s, %s, %s, %s, %s::word_freq[], %s, %s);
         """,
-        (article['title'], article['publisher'], article['tokens']['title'], article['author'].lower(), article['tokens']['tags'], article['tokens']['body'], article['word_freq'])
+        (article['title'], article['publisher'], article['tokens']['title'], article['author'].lower(), article['tokens']['tags'], article['tokens']['body'], article['word_freq'], json.dumps(article['2-word_freq']), json.dumps(article['3-word_freq']))
     )
 
     conn.commit()
-    # cur.close()
+    cur.close()
 
   except (Exception, psycopg2.DatabaseError) as error:
     print('db error:', error)

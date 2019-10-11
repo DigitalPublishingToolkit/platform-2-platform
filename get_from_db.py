@@ -224,33 +224,42 @@ def get_allarticles_word_freq():
     cur = conn.cursor()
 
     register_composite('word_freq', cur)
+    # register_composite('nword_freq', cur)
 
     #-- values
-    cur.execute("SET TIME ZONE 'UTC'; SELECT title, publisher, word_freq::word_freq[] FROM tokens;")
+    cur.execute("""
+      SET TIME ZONE 'UTC';
+      SELECT
+      tokens.title,
+      tokens.publisher,
+      tokens.word_freq::word_freq[],
+      tokens.two_word_freq,
+      tokens.three_word_freq,
+      metadata.tags,
+      metadata.mod
+      FROM tokens INNER JOIN metadata ON tokens.title = metadata.title;
+      """)
     values = cur.fetchall()
     cur.close()
 
-    labels = ['title', 'publisher', 'word_freq']
     index = []
-
     for article in values:
-      # convert type objects to string
-      items = []
+      # word_freq
+      wf = []
+      for value in article[2]:
+        cluster = {'word': value.word,
+                   'frequency': str(value.frequency),
+                   'relativity': str(value.relativity)}
+        wf.append(cluster)
 
-      for item in article:
-        try:
-          wf = []
-          for value in item:
-            cluster = {'word': value.word,
-                       'frequency': str(value.frequency),
-                       'relativity': str(value.relativity)}
-            wf.append(cluster)
+      article = {'title': article[0],
+                 'publisher': article[1],
+                 'mod': article[6].isoformat(),
+                 'tags': article[5],
+                 'word_freq': wf,
+                 '2-word_freq': article[3],
+                 '3-word_freq': article[4]}
 
-          items.append(wf)
-        except Exception:
-          items.append(item)
-
-      article = dict(zip(labels, items))
       index.append(article)
 
     return index

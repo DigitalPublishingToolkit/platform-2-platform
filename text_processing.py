@@ -107,8 +107,15 @@ def word_freq(corpus, article):
 def phrases_freq(text, size, article):
   pf = dict()
   pf = FreqDist(ngrams(text, size))
+  nwf = pf.most_common()
 
-  article[str(size) + 'w-phrases'] = pf.most_common()
+  index = []
+  for item in nwf:
+    x = {'ngram': list(item[0]),
+         'frequency': item[1]}
+    index.append(x)
+
+  return index
 
 # def relevancy(word_freq, article):
   # relevancy = 0
@@ -120,15 +127,13 @@ def phrases_freq(text, size, article):
   # article['relevancy'] = relevancy
 
 def process_metadata(input, article):
-  article = {
-    "mod": input['mod'],
-    "url": input['url'],
-    "title": input['title'],
-    "publisher": input['publisher'],
-    "abstract": input['abstract'],
-    "author": input['author'],
-    "images": input['images']
-  }
+  article = {"mod": input['mod'],
+             "url": input['url'],
+             "title": input['title'],
+             "publisher": input['publisher'],
+             "abstract": input['abstract'],
+             "author": input['author'],
+             "images": input['images']}
 
   tags = tags_filter(input['tags'])
   article['tags'] = tags
@@ -159,6 +164,8 @@ def process_tokens(input, article):
   article['body'] = tokenize(input['body'], True)
   corpus = tokenize(input['body'], False)
   article['word_freq'] = word_freq(corpus, article)
+  article['2-word_freq'] = phrases_freq(corpus, 2, article)
+  article['3-word_freq'] = phrases_freq(corpus, 3, article)
 
   print('text processing done')
   return article

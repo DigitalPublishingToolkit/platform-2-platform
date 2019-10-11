@@ -221,7 +221,7 @@ def main(name, articles):
         print('text-processing ERROR:', e)
 
   # ------------------
-  # 3. text-processing
+  # 3. text-tokenization
   elif (sys.argv[2] == 'tk'):
     articles = get_from_db.get_body(publisher)
 
@@ -231,13 +231,17 @@ def main(name, articles):
         article_tk = {}
 
         text_processing.process_tokens(item, article_tk)
+
         article_tokens['title'] = item['title']
         article_tokens['author'] = item['author']
         article_tokens['publisher'] = item['publisher']
         article_tokens['word_freq'] = article_tk['word_freq']
+        article_tokens['2-word_freq'] = article_tk['2-word_freq']
+        article_tokens['3-word_freq'] = article_tk['3-word_freq']
         article_tokens['tokens'] = article_tk
 
         save_to_db.tokens(article_tokens)
+
       except Exception as e:
         print('text-processing ERROR:', e)
 
