@@ -47,6 +47,10 @@ def ask(title, publisher, article_id, labels):
       print('model could not be loaded', e)
       model = model_setup(documents, fn_model)
 
+    # NOT
+    # model.build_vocab(documents)
+    # print(model.wv.vocab)
+
     def model_training(model, documents):
       model.train(documents, total_examples=model.corpus_count, epochs=model.epochs)
       return model
@@ -73,17 +77,27 @@ def ask(title, publisher, article_id, labels):
 
       results = []
       for label, index in [('MOST', 0), ('SECOND-MOST', 1), ('THIRD-MOST', 2)]:
+        mod = metadata[documents[index].tags[0]]['mod'],
+        url = metadata[documents[index].tags[0]]['url'],
         title = metadata[documents[index].tags[0]]['title']
-        url = metadata[documents[index].tags[0]]['url']
         publisher = metadata[documents[index].tags[0]]['publisher']
         abstract = metadata[documents[index].tags[0]]['abstract']
+        tags = metadata[documents[index].tags[0]]['tags']
+        author = metadata[documents[index].tags[0]]['author']
+        body = metadata[documents[index].tags[0]]['body']
+        article_id = metadata[documents[index].tags[0]]['id']
 
         article = {
-          "title": title,
-          "url": url,
-          "publisher": publisher,
-          "abstract": abstract,
-          "score": sims[index][1]
+            "mod": mod[0],
+            "url": url[0],
+            "title": title,
+            "publisher": publisher,
+            "abstract": abstract,
+            "tags": tags,
+            "author": author,
+            "body": body,
+            "id": article_id,
+            "score": sims[index][1]
         }
         results.append(article)
 
