@@ -416,10 +416,13 @@ def get_random_article():
 
     cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata ORDER BY random() limit 1;" % (', '.join(labels),))
     article = cur.fetchone()
-    # be aware that the id we pass in here, eg `article[7]`,
-    # depends on the ordering of the table structure of the database
-    # and b/w local and dev the order differ! find different way to pass arg
-    feedbacks = get_feedback_match(cur, article[7])
+
+    # get list position of `id` from the get_labels() list
+    # this avoids problems when making a table with diff field orders
+    # eg between local and production tables
+    id_pos = [i for i, x in enumerate(labels) if x == 'id'][0]
+
+    feedbacks = get_feedback_match(cur, article[id_pos])
     cur.close()
 
     labels.append('matches')
