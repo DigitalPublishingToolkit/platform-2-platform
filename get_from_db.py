@@ -482,7 +482,7 @@ def get_corpus(publisher, **labels):
     cur = conn.cursor()
 
     # -- get list of publishers and take out the one passed
-    cur.execute("SELECT DISTINCT publisher FROM metadata")
+    cur.execute("SELECT DISTINCT publisher FROM metadata;")
     pubs = cur.fetchall()
     pubs = get_flat_list(pubs)
     pubs.remove(publisher)
@@ -490,7 +490,7 @@ def get_corpus(publisher, **labels):
 
     index = {}
     for pub in pubs:
-      cur.execute("SELECT COUNT(*) FROM tokens WHERE publisher = %s", (pub,))
+      cur.execute("SELECT COUNT(*) FROM tokens WHERE publisher = %s;", (pub,))
       count = cur.fetchone()[0]
       index[pub] = count
 
