@@ -17,10 +17,10 @@ def scrape(article):
 
     cur.execute(
         """
-        INSERT INTO scraper (mod, url, title, publisher, abstract, tags, author, body, images)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+        INSERT INTO scraper (mod, url, title, publisher, abstract, tags, author, body, images, links)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
         """,
-        (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], article['images'])
+        (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], article['images'], article['links'])
     )
 
     conn.commit()
