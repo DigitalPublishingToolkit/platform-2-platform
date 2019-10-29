@@ -60,6 +60,20 @@ def scraper(s, mod, url, publisher, article):
   if body is None:
     body = soup.find('section')
 
+  #-- links
+  if body is not None:
+    try:
+      links = []
+      for link in body.find_all('a', href=True):
+        links.append(link['href'])
+        print(link['href'])
+      article['links'] = links
+    except Exception as e:
+      print('link parser', e)
+  else:
+    article['links'] = []
+
+  #-- body
   if body is not None:
     try:
       pp = body.find_all('p')
@@ -70,6 +84,8 @@ def scraper(s, mod, url, publisher, article):
       article['body'] = copy
     except Exception as e:
       print('body parser', e)
+  else:
+    article['body'] = ''
 
   #-- imgs
   img_urls = []
