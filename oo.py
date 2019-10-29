@@ -55,9 +55,27 @@ def scraper(s, mod, url, publisher, article):
 
   get_author()
 
-  body = soup.find('div', id='text').select('.contentCluster')
+  # is the footnotes div set on `display:block` after the page has loaded?
+  footnotes = soup.find('div', id='footnotes').contents
+  print(footnotes)
 
+  # if footnotes is not None:
+  #   #-- href
+  #   try:
+  #     links = []
+  #     for block in body:
+  #       for link in block.find_all('a'):
+  #         links.append(link['href'])
+
+  #     article['links'] = links
+  #   except Exception as e:
+  #     print('href failed', e)
+  # else:
+  #   article['links'] = ''
+
+  body = soup.find('div', id='text').select('.contentCluster')
   if body is not None:
+    #-- body
     try:
       pp = []
       for block in body:
