@@ -133,7 +133,8 @@ def process_metadata(input, article):
              "publisher": input['publisher'],
              "abstract": input['abstract'],
              "author": input['author'],
-             "images": input['images']}
+             "images": input['images'],
+             "links": input['links']}
 
   tags = tags_filter(input['tags'])
   article['tags'] = tags
@@ -141,6 +142,9 @@ def process_metadata(input, article):
   body = re.sub(r'^Share this on\n\n\n\n', '', input['body'])
   body = re.sub(r'\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave$', '', body)
   article['body'] = body
+
+  links = [url for url in input['links'] if url.startswith('#') is False]
+  article['links'] = links
 
   print('text processing done')
   return article
