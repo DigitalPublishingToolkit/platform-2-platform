@@ -65,8 +65,20 @@ def scraper(s, mod, url, publisher, article):
     try:
       links = []
       for link in body.find_all('a', href=True):
-        links.append(link['href'])
-        print(link['href'])
+        #-- the try / except is because i try to check if the parent element wrapping the <a href> has a class attribute:
+        #-- if yes, filter out some classes and grab only from the rest
+        #-- if not, don't bother and move on grab everything
+        try:
+          print('link-parent-class', link.parent['class'])
+          print(link.parent['class'][0])
+          if link.parent['class'][0] not in ['prev-page', 'next-page', 'wp-caption']:
+            links.append(link['href'])
+            print('YES', link['href'], link.parent['class'][0], '\n')
+        except Exception as e:
+          print('link-parent-class: empty', e)
+          links.append(link['href'])
+          print('YES', link['href'], '\n')
+
       article['links'] = links
     except Exception as e:
       print('link parser', e)
