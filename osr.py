@@ -36,17 +36,25 @@ def scraper(s, slug, article):
 
   copy = []
   img_urls = []
+  links = []
   for block in entry['text']:
     for k, v in block.items():
       if (k == 'content'):
         rv = markdown.markdown(v)
         hv = BeautifulSoup(rv, 'lxml')
         copy.append(hv.text)
+
+        #-- links
+        for link in hv.find_all('a', href=True):
+          print(link, '\n', link['href'], '\n')
+          links.append(link.get('href'))
+
       elif (k == 'filename'):
         img_urls.append(v)
 
   copy = ''.join(copy)
   article['body'] = copy
+  article['links'] = links
 
   img_store = []
   #-- write imgs
