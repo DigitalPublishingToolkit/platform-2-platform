@@ -50,6 +50,16 @@ def ask(title, publisher, article_id, labels):
     # NOT
     # model.build_vocab(documents)
     # print(model.wv.vocab)
+    model_vocab = [word for word in model.wv.vocab]
+    # print(model_vocab)
+
+    # -- this return word token and representation of it in vector space
+    # my_dict = dict({})
+    # for idx, key in enumerate(model.wv.vocab):
+    #     my_dict[key] = model.wv[key]
+    #     # my_dict[key] = model.wv.get_vector(key)
+    #     # my_dict[key] = model.wv.word_vec(key, use_norm=False)
+    # print(my_dict)
 
     def model_training(model, documents):
       model.train(documents, total_examples=model.corpus_count, epochs=model.epochs)
@@ -63,6 +73,7 @@ def ask(title, publisher, article_id, labels):
 
     article = {}
     words = get_from_db.get_specific_article(article_id, labels)
+    # print(words, len(words))
 
     if bool(words) is False:
       return {'error': 'article with id %s not found' % article_id}
@@ -70,22 +81,42 @@ def ask(title, publisher, article_id, labels):
       tokens = text_processing.process_tokens(words, article)
       article['tokens'] = tokens
 
-      td = TaggedDocument(article['tokens'], 1)
+      td = TaggedDocument(article['tokens'], 1) 
 
       inferred_vector = model.infer_vector(td[0])
       #-- we get our most-similar results as documents,
       #-- we set `topn` to return the n of results we want to have
       sims = model.docvecs.most_similar([inferred_vector], topn=len(documents))
 
-      print('SIMS', sims, '\n')
+      # print('SIMS', sims, '\n')
       # print('DOC', documents, '\n')
-      print('DOC-LEN', len(documents), '\n')
+      # print('DOC-LEN', len(documents), '\n')
+
+      model_vocab = [word for word in model.wv.vocab]
+      s_model_tk = set(model_vocab)
+
+      def get_article_vocab (title, tags, body):
+        #-- sum apparently can also be used to unnest list of lists
+        #-- eg from [[a,b], [c,d], [e,f]] => [a,b,c,d,e,f]
+        # article_tokens = [title, ', '.join(tags), body]
+        article_tk = [title, tags, body]
+        article_tokens = sum(article_tk, [])
+        
+        print('model_vocab', len(model_vocab), 'article_tk', len(article_tokens))
+
+        s_article_tk = set(article_tokens)
+        article_vocab = s_article_tk.intersection(s_model_tk)
+        print(article_vocab, len(article_vocab))
+
+        return list(article_vocab)
+
+      get_article_vocab(article['title'], article['tags'], article['body'])
 
       results = []
       # for label, index in [('MOST', 0), ('SECOND-MOST', 1), ('THIRD-MOST', 2)]:
       for index, (tag_id, rate) in enumerate(sims):
         if (rate >= 0.1):
-          print(index, tag_id, rate)
+          # print(index, tag_id, rate)
           mod = metadata[documents[index].tags[0]]['mod'],
           url = metadata[documents[index].tags[0]]['url'],
           title = metadata[documents[index].tags[0]]['title']
@@ -107,7 +138,14 @@ def ask(title, publisher, article_id, labels):
               "body": body,
               "id": article_id,
               "score": rate
-           }
+          }
+
+          token_dict = {}
+          tokens = text_processing.process_tokens(article, token_dict)
+          vocab = get_article_vocab(token_dict['title'], token_dict['tags'], token_dict['body'])
+
+          article['vocabulary'] = vocab
+
         results.append(article)
 
       return results
