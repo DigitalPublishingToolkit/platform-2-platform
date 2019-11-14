@@ -43,17 +43,15 @@ def scraper(s, mod, url, publisher, article):
   get_tags(tags)
 
   #-- author
-  def get_author(classpublisher):
-    author = soup.find('p', class_=classpublisher)
-
-    if author is not None:
-      if len(author.contents) > 0:
-        print('author.contents[0].text', author.contents[0].text)
-        article['author'] = author.contents[0].text
-    else:
-      article['author'] = ''
-
-  get_author('author-name')
+  author = soup.find('p', class_='author-name')
+  try:
+    print('author', author)
+    article['author'] = author.contents[0].text
+  except Exception as e:
+    print("can't find author here, try other location", e)
+    author = soup.find('p', class_='title')
+    print('author', author)
+    article['author'] = author.text
 
   #-- copy
   body = soup.find('article')
@@ -64,6 +62,7 @@ def scraper(s, mod, url, publisher, article):
   if body is not None:
     try:
       links = []
+      refs = []
       for link in body.find_all('a', href=True):
         #-- the try / except is because i try to check if the parent element wrapping the <a href> has a class attribute:
         #-- if yes, filter out some classes and grab only from the rest
@@ -80,10 +79,12 @@ def scraper(s, mod, url, publisher, article):
           print('YES', link['href'], '\n')
 
       article['links'] = links
+      article['refs'] = refs
     except Exception as e:
       print('link parser', e)
   else:
     article['links'] = []
+    article['refs'] = []
 
   #-- body
   if body is not None:
@@ -92,7 +93,7 @@ def scraper(s, mod, url, publisher, article):
       copy = []
       for p in pp:
         copy.append(p.text)
-      copy = "\n\n\n\n".join(copy)
+      copy = "\n\n".join(copy)
       article['body'] = copy
     except Exception as e:
       print('body parser', e)
