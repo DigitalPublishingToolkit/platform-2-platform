@@ -15,68 +15,96 @@ def get_labels(cur, table):
   labels = get_flat_list(labels)
   return labels
 
-def get_feedback_matches(cur):
-  cur.execute("""
-    SET TIME ZONE 'UTC';
-    SELECT
-    metadata.id input_id,
-    metadata.title,
-    feedback.id match_id,
-    feedback.input_title,
-    feedback.match_title,
-    feedback.match_publisher,
-    feedback.score,
-    feedback.timestamp
-    FROM metadata
-    INNER JOIN feedback ON metadata.title = feedback.input_title;
-    """)
+def get_feedback_matches():
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
 
-  cross_q = cur.fetchall()
-  feedback_q = [list(item) for item in cross_q]
+    cur.execute("""
+      SET TIME ZONE 'UTC';
+      SELECT
+      metadata.id input_id,
+      metadata.title,
+      feedback.id match_id,
+      feedback.input_title,
+      feedback.match_title,
+      feedback.match_publisher,
+      feedback.score,
+      feedback.timestamp
+      FROM metadata
+      INNER JOIN feedback ON metadata.title = feedback.input_title;
+      """)
 
-  feedbacks = []
-  for match in feedback_q:
-    feedback = {'input_id': match[0],
-                'match_title': match[4],
-                'match_publisher': match[5],
-                'score': match[6],
-                'timestamp': match[7].isoformat()}
+    cross_q = cur.fetchall()
+    feedback_q = [list(item) for item in cross_q]
 
-    feedbacks.append(feedback)
+    feedbacks = []
+    for match in feedback_q:
+      feedback = {'input_id': match[0],
+                  'match_title': match[4],
+                  'match_publisher': match[5],
+                  'score': match[6],
+                  'timestamp': match[7].isoformat()}
 
-  return feedbacks
+      feedbacks.append(feedback)
 
-def get_feedback_match(cur, input_id):
-  cur.execute("""
-    SET TIME ZONE 'UTC';
-    SELECT
-    metadata.id input_id,
-    metadata.title,
-    feedback.id match_id,
-    feedback.input_title,
-    feedback.match_title,
-    feedback.match_publisher,
-    feedback.score,
-    feedback.timestamp
-    FROM metadata
-    INNER JOIN feedback ON metadata.title = feedback.input_title
-    WHERE metadata.id = %s;
-    """ % (input_id,))
+    return feedbacks
 
-  cross_q = cur.fetchall()
-  feedback_q = [list(item) for item in cross_q]
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
 
-  feedbacks = []
-  for match in feedback_q:
-    feedback = {'input_id': match[0],
-                'match_title': match[4],
-                'match_publisher': match[5],
-                'score': match[6],
-                'timestamp': match[7].isoformat()}
+def get_feedback_match(input_id):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
 
-    feedbacks.append(feedback)
+    cur.execute("""
+      SET TIME ZONE 'UTC';
+      SELECT
+      metadata.id input_id,
+      metadata.title,
+      feedback.id match_id,
+      feedback.input_title,
+      feedback.match_title,
+      feedback.match_publisher,
+      feedback.score,
+      feedback.timestamp
+      FROM metadata
+      INNER JOIN feedback ON metadata.title = feedback.input_title
+      WHERE metadata.id = %s;
+      """ % (input_id,))
 
-  return feedbacks
+    cross_q = cur.fetchall()
+    feedback_q = [list(item) for item in cross_q]
+
+    feedbacks = []
+    for match in feedback_q:
+      feedback = {'input_id': match[0],
+                  'match_title': match[4],
+                  'match_publisher': match[5],
+                  'score': match[6],
+                  'timestamp': match[7].isoformat()}
+
+      feedbacks.append(feedback)
+
+    return feedbacks
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
 
 def make_article(items, labels, article):
   for item in article:
@@ -186,7 +214,7 @@ def get_allarticles():
 
     cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata;" % (', '.join(labels),))
     values = cur.fetchall()
-    feedbacks = get_feedback_matches(cur)
+    feedbacks = get_feedback_matches()
     cur.close()
 
     def make_index(index, labels, values):
@@ -284,7 +312,7 @@ def get_pub_articles(publisher):
     cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata WHERE publisher = '%s';" % (', '.join(labels), publisher,))
     values = cur.fetchall()
 
-    feedbacks = get_feedback_matches(cur)
+    feedbacks = get_feedback_matches()
     cur.close()
 
     def make_index(index, labels, values):
@@ -422,7 +450,7 @@ def get_random_article():
     # eg between local and production tables
     id_pos = [i for i, x in enumerate(labels) if x == 'id'][0]
 
-    feedbacks = get_feedback_match(cur, article[id_pos])
+    feedbacks = get_feedback_match(article[id_pos])
     cur.close()
 
     labels.append('matches')

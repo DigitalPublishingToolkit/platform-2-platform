@@ -37,47 +37,66 @@ def scraper(s, slug, article):
   copy = []
   img_urls = []
   links = []
-  for block in entry['text']:
-    for k, v in block.items():
-      if (k == 'content'):
-        rv = markdown.markdown(v)
-        hv = BeautifulSoup(rv, 'lxml')
-        copy.append(hv.text)
+  refs = []
 
-        #-- links
-        for link in hv.find_all('a', href=True):
-          print(link, '\n', link['href'], '\n')
-          links.append(link.get('href'))
+  if entry['text'] is not None:
+    try:
+      for block in entry['text']:
+        for k, v in block.items():
+          #-- txt
+          if (k == 'content'):
+            rv = markdown.markdown(v)
+            hv = BeautifulSoup(rv, 'lxml')
+            copy.append(hv.text)
 
-      elif (k == 'filename'):
-        img_urls.append(v)
+            #-- links
+            for link in hv.find_all('a', href=True):
+              print(link, '\n', link['href'], '\n')
+              links.append(link.get('href'))
 
-  copy = ''.join(copy)
-  article['body'] = copy
-  article['links'] = links
+          #-- imgs
+          elif (k == 'filename'):
+            img_urls.append(v)
+
+      copy = '\n\n'.join(copy)
+      article['body'] = copy
+      article['links'] = links
+      article['refs'] = refs
+    except Exception as e:
+      print('body, link, ref parser', e)
+  else:
+    article['body'] = []
+    article['links'] = []
+    article['refs'] = []
 
   img_store = []
   #-- write imgs
-  for url in img_urls:
-    dir_path = './imgs/open-set-reader'
-    if not os.path.exists(dir_path):
-      os.makedirs(dir_path)
+  if len(img_urls) > 0:
+    try:
+      for url in img_urls:
+        dir_path = './imgs/open-set-reader'
+        if not os.path.exists(dir_path):
+          os.makedirs(dir_path)
 
-    # https://stackoverflow.com/a/18043472
-    full_url = 'http://openset.nl/reader/pocket/uploads/' + url
+        # https://stackoverflow.com/a/18043472
+        full_url = 'http://openset.nl/reader/pocket/uploads/' + url
 
-    fn = url.replace('/', '-').replace('.', '-').replace(' ', '-')
-    r = requests.get(full_url, stream=True)
-    if not os.path.exists(dir_path + '/' + fn):
-      with open(dir_path + '/' + fn, 'wb') as outf:
-        shutil.copyfileobj(r.raw, outf)
-      del r
-    else:
-      print('image already exists!', dir_path + '/' + fn)
+        fn = url.replace('/', '-').replace('.', '-').replace(' ', '-')
+        r = requests.get(full_url, stream=True)
+        if not os.path.exists(dir_path + '/' + fn):
+          with open(dir_path + '/' + fn, 'wb') as outf:
+            shutil.copyfileobj(r.raw, outf)
+          del r
+        else:
+          print('image already exists!', dir_path + '/' + fn)
 
-    img_store.append(dir_path + '/' + fn)
+        img_store.append(dir_path + '/' + fn)
 
-  article['images'] = img_store
+      article['images'] = img_store
+    except Exception as e:
+      print('img scraper', e)
+  else:
+    article['images'] = []
 
   print('scraping done...')
   return article

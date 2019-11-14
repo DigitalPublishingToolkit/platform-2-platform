@@ -56,22 +56,39 @@ def scraper(s, mod, url, publisher, article):
   get_author()
 
   # is the footnotes div set on `display:block` after the page has loaded?
-  footnotes = soup.find('div', id='footnotes').contents
-  print(footnotes)
+  footnotes = soup.find('div', id='rawFootnotes').contents
+  print(type(footnotes))
 
-  # if footnotes is not None:
-  #   #-- href
-  #   try:
-  #     links = []
-  #     for block in body:
-  #       for link in block.find_all('a'):
-  #         links.append(link['href'])
+  if len(footnotes) > 0:
+    try:
+      #-- try to grab href if there's one
+      #-- else grab ref
+      links = []
+      refs = []
+      for block in footnotes:
+        try:
+        # print(block)
+          # print(block.text)
+          refs.append(block.text.strip())
 
-  #     article['links'] = links
-  #   except Exception as e:
-  #     print('href failed', e)
-  # else:
-  #   article['links'] = ''
+          for link in block.find_all('a', href=True):
+            links.append(link['href'])
+
+        except Exception as e:
+          print('nein, kein href!\n', e)
+          try:
+            refs.append(block.text.strip())
+          except Exception as e:
+            print('::\n', block, '::')
+            print('no content, empty string', e)
+
+      article['links'] = links
+      article['refs'] = refs
+    except Exception as e:
+      print('references failed', e)
+  else:
+    article['links'] = []
+    article['refs'] = []
 
   body = soup.find('div', id='text').select('.contentCluster')
   if body is not None:
@@ -87,7 +104,7 @@ def scraper(s, mod, url, publisher, article):
       for p in pp:
         for item in p:
           copy.append(item.text)
-      copy = "\n\n\n\n".join(copy)
+      copy = "\n\n".join(copy)
       article['body'] = copy
     except Exception as e:
       print('body parser', e)
