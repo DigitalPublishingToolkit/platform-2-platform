@@ -72,8 +72,12 @@ def ask(title, publisher, article_id, labels):
       print('no `train` flag', e)
 
     article = {}
+
+    #-- convert labels dict to list, pass it to `get_specific_article`
+    labels = [k for k, v in labels.items() if v is True]
     words = get_from_db.get_specific_article(article_id, labels)
-    # print(words, len(words))
+    # print('WORDS')
+    # print(words)
 
     if bool(words) is False:
       return {'error': 'article with id %s not found' % article_id}
@@ -81,7 +85,7 @@ def ask(title, publisher, article_id, labels):
       tokens = text_processing.process_tokens(words, article)
       article['tokens'] = tokens
 
-      td = TaggedDocument(article['tokens'], 1) 
+      td = TaggedDocument(article['tokens'], 1)
 
       inferred_vector = model.infer_vector(td[0])
       #-- we get our most-similar results as documents,
@@ -95,25 +99,34 @@ def ask(title, publisher, article_id, labels):
       model_vocab = [word for word in model.wv.vocab]
       s_model_tk = set(model_vocab)
 
-      def get_article_vocab (title, tags, body):
-        #-- sum apparently can also be used to unnest list of lists
-        #-- eg from [[a,b], [c,d], [e,f]] => [a,b,c,d,e,f]
-        # article_tokens = [title, ', '.join(tags), body]
-        article_tk = [title, tags, body]
-        article_tokens = sum(article_tk, [])
-        
+      def get_article_vocab(tokens):
+        article_tokens = []
+        for token in tokens:
+          print('token', token)
+          for item in token:
+            if type(item) is list:
+                article_tokens.append(','.join(item))
+            else:
+              article_tokens.append(item)
+
+        print('article_tokens', article_tokens)
         print('model_vocab', len(model_vocab), 'article_tk', len(article_tokens))
 
         s_article_tk = set(article_tokens)
         article_vocab = s_article_tk.intersection(s_model_tk)
-        print(article_vocab, len(article_vocab))
+        print('article_vocab', article_vocab, len(article_vocab))
 
         return list(article_vocab)
 
-      get_article_vocab(article['title'], article['tags'], article['body'])
+      #-- convert `article{}` to a list of values by passing
+      #-- only keys that are part of the `labels` list,
+      #-- which is the list of article fields being requested
+      #-- by Ask and based on which return a list of article matches
+      article_tokens = [v for k, v in article.items() if k in labels]
+
+      get_article_vocab(article_tokens)
 
       results = []
-      # for label, index in [('MOST', 0), ('SECOND-MOST', 1), ('THIRD-MOST', 2)]:
       for index, (tag_id, rate) in enumerate(sims):
         if (rate >= 0.1):
           # print(index, tag_id, rate)
@@ -125,7 +138,11 @@ def ask(title, publisher, article_id, labels):
           tags = metadata[documents[index].tags[0]]['tags']
           author = metadata[documents[index].tags[0]]['author']
           body = metadata[documents[index].tags[0]]['body']
+          images = metadata[documents[index].tags[0]]['images']
+          links = metadata[documents[index].tags[0]]['links']
+          refs = metadata[documents[index].tags[0]]['refs']
           article_id = metadata[documents[index].tags[0]]['id']
+          score = get_from_db.get_feedback_match(article_id)
 
           article = {
               "mod": mod[0],
@@ -136,13 +153,18 @@ def ask(title, publisher, article_id, labels):
               "tags": tags,
               "author": author,
               "body": body,
+              "images": images,
+              "links": links,
+              "refs": refs,
               "id": article_id,
-              "score": rate
+              "rate": rate,
+              "score": score
           }
 
           token_dict = {}
           tokens = text_processing.process_tokens(article, token_dict)
-          vocab = get_article_vocab(token_dict['title'], token_dict['tags'], token_dict['body'])
+          tokens = [[v] for k, v in article.items() if k in labels]
+          vocab = get_article_vocab(tokens)
 
           article['vocabulary'] = vocab
 

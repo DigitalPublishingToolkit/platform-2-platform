@@ -134,7 +134,8 @@ def process_metadata(input, article):
              "abstract": input['abstract'],
              "author": input['author'],
              "images": input['images'],
-             "links": input['links']}
+             "links": input['links'],
+             "refs": input['refs']}
 
   tags = tags_filter(input['tags'])
   article['tags'] = tags
@@ -150,26 +151,39 @@ def process_metadata(input, article):
   return article
 
 def process_tokens(input, article):
-  tags = tags_filter(input['tags'])
-  article['tags'] = tags
+  try:
+    tags = tags_filter(input['tags'])
+    article['tags'] = tags
+  except Exception as e:
+      print('TAGS parser', e)
 
   def tokenize(input, flag):
     if flag is True:
       tokens = re.sub(r'^Share this on\n\n\n\n', '', input)
       tokens = re.sub(r'\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave$', '', tokens)
+
     tokens = text_cu(input)
     tokens = word_tokenize(tokens)
     tokens = stop_words(tokens, article)
+
     if flag is True:
       tokens = unique_words(tokens, article)
+
     return tokens
 
-  article['title'] = tokenize(input['title'], False)
-  article['body'] = tokenize(input['body'], True)
-  corpus = tokenize(input['body'], False)
-  article['word_freq'] = word_freq(corpus, article)
-  article['2-word_freq'] = phrases_freq(corpus, 2, article)
-  article['3-word_freq'] = phrases_freq(corpus, 3, article)
+  try:
+    article['title'] = tokenize(input['title'], False)
+  except Exception as e:
+    print('TITLE parser', e)
+    
+  try:
+    article['body'] = tokenize(input['body'], True)
+    corpus = tokenize(input['body'], False)
+    article['word_freq'] = word_freq(corpus, article)
+    article['2-word_freq'] = phrases_freq(corpus, 2, article)
+    article['3-word_freq'] = phrases_freq(corpus, 3, article)
+  except Exception as e:
+    print('BODY parser', e)
 
   print('text processing done')
   return article
