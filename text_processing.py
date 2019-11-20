@@ -188,4 +188,43 @@ def process_tokens(input, article):
   print('text processing done')
   return article
 
+def vector_tokenize(input, article):
+  def tokenize(input, flag):
+    if flag is True:
+      tokens = re.sub(r'^Share this on\n\n\n\n', '', input)
+      tokens = re.sub(r'\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave$', '', tokens)
+
+    tokens = text_cu(input)
+    tokens = word_tokenize(tokens)
+    tokens = stop_words(tokens, article)
+
+    if flag is True:
+      tokens = unique_words(tokens, article)
+
+    return tokens
+
+  try:
+    article['title'] = tokenize(input['title'], False)
+  except Exception as e:
+    print('TITLE parser', e)
+
+  try:
+    article['author'] = tokenize(input['author'], False)
+  except Exception as e:
+    print('AUTHOR parser', e)
+
+  try:
+    tags = tags_filter(input['tags'])
+    article['tags'] = tags
+  except Exception as e:
+      print('TAGS parser', e)
+
+  try:
+    article['body'] = tokenize(input['body'], True)
+  except Exception as e:
+    print('BODY parser', e)
+
+  print('text processing done')
+  return article
+
 #-- end
