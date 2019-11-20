@@ -50,8 +50,8 @@ def scraper(s, mod, url, publisher, article):
   except Exception as e:
     print("can't find author here, try other location", e)
     author = soup.find('p', class_='title')
-    print('author', author)
-    article['author'] = author.text
+    print('author', author.find('a').text)
+    article['author'] = author.find('a').text
 
   #-- copy
   body = soup.find('article')
