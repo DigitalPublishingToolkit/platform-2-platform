@@ -75,8 +75,8 @@ def ask(title, publisher, article_id, labels):
     #-- convert labels dict to list, pass it to `get_specific_article`
     labels = [k for k, v in labels.items() if v is True]
     words = get_from_db.get_specific_article(article_id, labels)
-    print('WORDS')
-    print(words)
+    # print('WORDS')
+    # print(words)
 
     if bool(words) is False:
       return {'error': 'article with id %s not found' % article_id}
@@ -92,7 +92,7 @@ def ask(title, publisher, article_id, labels):
       # sims = model.docvecs.most_similar([inferred_vector], topn=len(documents))
       sims = model.docvecs.most_similar([inferred_vector], topn=100)
 
-      print('SIMS', sims)
+      # print('SIMS', sims)
       # print('DOC', documents)
       # print('DOC-LEN', len(documents))
 
@@ -144,25 +144,26 @@ def ask(title, publisher, article_id, labels):
           score = get_from_db.get_feedback_match(article_id)
 
           article = {
-              # 'mod': mod[0],
-              # 'url': url[0],
+              'mod': mod[0],
+              'url': url[0],
               'title': title,
               'publisher': publisher,
-              # 'abstract': abstract,
-              # 'tags': tags,
-              # 'author': author,
-              # 'body': body,
-              # 'images': images,
-              # 'links': links,
-              # 'refs': refs,
+              'abstract': abstract,
+              'tags': tags,
+              'author': author,
+              'body': body,
+              'images': images,
+              'links': links,
+              'refs': refs,
               'id': article_id,
               'rate': rate,
-              # 'score': score
+              'score': score
           }
 
           token_dict = {}
           tokens = text_processing.process_tokens(article, token_dict)
-          tokens = [[v] for k, v in article.items() if k in labels]
+          tokens = [v for k, v in tokens.items() if k in labels]
+          print('TOKENS FILTERED', tokens)
           vocab = get_article_vocab(tokens)
 
           article['vocabulary'] = vocab
