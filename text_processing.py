@@ -137,11 +137,14 @@ def process_metadata(input, article):
              "links": input['links'],
              "refs": input['refs']}
 
+  article['title'] = re.sub(r'&nbsp', ' ', input['title'])
+  article['abstract'] = re.sub(r'&nbsp', ' ', input['abstract'])
+  article['author'] = re.sub(r'&nbsp', ' ', input['author'])
+
   tags = tags_filter(input['tags'])
   article['tags'] = tags
 
-  body = re.sub(r'^Share this on\n\n\n\n', '', input['body'])
-  body = re.sub(r'\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave$', '', body)
+  body = re.sub(r'&nbsp', ' ', input['body'])
   article['body'] = body
 
   links = [url for url in input['links'] if url.startswith('#') is False]
@@ -159,7 +162,6 @@ def process_tokens(input, article):
 
   def tokenize(input, flag):
     if flag is True:
-      tokens = re.sub(r'^Share this on\n\n\n\n', '', input)
       tokens = re.sub(r'\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave$', '', tokens)
 
     tokens = text_cu(input)
@@ -191,7 +193,6 @@ def process_tokens(input, article):
 def vector_tokenize(input, article):
   def tokenize(input, flag):
     if flag is True:
-      tokens = re.sub(r'^Share this on\n\n\n\n', '', input)
       tokens = re.sub(r'\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave\n\n\n\nSaveSave$', '', tokens)
 
     tokens = text_cu(input)
