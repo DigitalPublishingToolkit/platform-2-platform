@@ -67,8 +67,6 @@ def scraper(s, mod, url, publisher, article):
       refs = []
       for block in footnotes:
         try:
-        # print(block)
-          # print(block.text)
           refs.append(block.text.strip())
 
           for link in block.find_all('a', href=True):
