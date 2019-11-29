@@ -62,7 +62,7 @@ def scraper(s, mod, url, publisher, article):
   if body is not None:
     try:
       links = []
-      refs = []
+
       for link in body.find_all('a', href=True):
         #-- the try / except is because i try to check if the parent element wrapping the <a href> has a class attribute:
         #-- if yes, filter out some classes and grab only from the rest
@@ -79,7 +79,17 @@ def scraper(s, mod, url, publisher, article):
           print('YES', link['href'], '\n')
 
       article['links'] = links
+
+      refs = []
+      try:
+        for ref in body.find_all('sup'):
+          rr = ref.span.text.strip()
+          refs.append(rr)
+      except Exception as e:
+        print('no ref?', e)
+
       article['refs'] = refs
+
     except Exception as e:
       print('link parser', e)
   else:
