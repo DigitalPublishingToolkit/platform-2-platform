@@ -68,13 +68,10 @@ def scraper(s, mod, url, publisher, article):
         #-- if yes, filter out some classes and grab only from the rest
         #-- if not, don't bother and move on grab everything
         try:
-          print('link-parent-class', link.parent['class'])
-          print(link.parent['class'][0])
           if link.parent['class'][0] not in ['prev-page', 'next-page', 'wp-caption']:
             links.append(link['href'])
             print('YES', link['href'], link.parent['class'][0], '\n')
         except Exception as e:
-          print('link-parent-class: empty', e)
           links.append(link['href'])
           print('YES', link['href'], '\n')
 
@@ -99,10 +96,7 @@ def scraper(s, mod, url, publisher, article):
   #-- body
   if body is not None:
     try:
-      pp = body.find_all('p')
       copy = []
-      for p in pp:
-        copy.append(p.text)
       copy = "\n\n".join(copy)
       article['body'] = copy
     except Exception as e:
