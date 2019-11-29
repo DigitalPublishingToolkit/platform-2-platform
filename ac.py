@@ -97,6 +97,21 @@ def scraper(s, mod, url, publisher, article):
   if body is not None:
     try:
       copy = []
+      try:
+        intro = body.find('div', class_='col-6').find('p').text
+        copy.append(intro)
+        pp = body.find('div', class_='container-4').find_all('p')
+        
+        for p in pp:
+          copy.append(p.text)
+      except Exception as e:
+        print('try other layout format (IMG)', e)
+        pp = body.find('div', class_='col-3').find_all('p')[3:]
+        # print(pp)
+        for p in pp:
+          print('DESC', p)
+          copy.append(p.text)
+
       copy = "\n\n".join(copy)
       article['body'] = copy
     except Exception as e:
