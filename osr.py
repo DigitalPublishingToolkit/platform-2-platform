@@ -32,7 +32,18 @@ def scraper(s, slug, article):
 
   tags('store/open-set-articles.tsv', article['title'])
 
-  article['author'] = entry['author'].strip()
+  author = entry['author']
+  # try:
+  #   author = author.split('/')
+  #   print(author)
+  # except Exception as e:
+  #   print(e)
+  #   author = author.split('&')
+  #   print(author)
+  # except Exception as e:
+  #   print(e)
+  article['author'] = [author]
+  print(author)
 
   copy = []
   img_urls = []

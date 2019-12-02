@@ -51,7 +51,9 @@ def scraper(s, mod, url, publisher, article):
     author = soup.find(attrs={'name': 'author'})
 
     if author is not None:
-      article['author'] = author.get('content')
+      author = author.get('content').split(',')
+      article['author'] = author
+      # article['author'] = author.get('content')
 
   get_author()
 

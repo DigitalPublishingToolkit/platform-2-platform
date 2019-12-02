@@ -139,7 +139,16 @@ def process_metadata(input, article):
 
   article['title'] = re.sub(r'&nbsp', ' ', input['title'])
   article['abstract'] = re.sub(r'&nbsp', ' ', input['abstract'])
-  article['author'] = re.sub(r'&nbsp', ' ', input['author'])
+
+  authors = []
+  for item in input['author']:
+    item = re.sub(r'&nbsp', ' ', item)
+    item = re.sub(r' ;', ' ', item)
+    item = item.strip()
+    authors.append(item)
+
+  print(authors)
+  article['author'] = authors
 
   tags = tags_filter(input['tags'])
   article['tags'] = tags

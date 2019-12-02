@@ -43,15 +43,25 @@ def scraper(s, mod, url, publisher, article):
   get_tags(tags)
 
   #-- author
-  author = soup.find('p', class_='author-name')
-  try:
-    print('author', author)
-    article['author'] = author.contents[0].text
-  except Exception as e:
-    print("can't find author here, try other location", e)
-    author = soup.find('p', class_='title')
-    print('author', author.find('a').text)
-    article['author'] = author.find('a').text
+  authors = soup.find_all('p', class_='author-name')
+  print(authors, '\n')
+  if len(authors) != 0:
+    author_l = []
+    for author in authors:
+      author_l.append(author.a.text)
+
+    article['author'] = author_l
+
+  else:
+    print("can't find author here, try other location")
+    authors = soup.find_all('p', class_='title')
+    print('AUTHORS', authors)
+    author_l = []
+    for author in authors:
+      print(author.find('a').text)
+      author_l.append(author.find('a').text)
+
+    article['author'] = author_l
 
   #-- copy
   body = soup.find('article')
@@ -70,10 +80,10 @@ def scraper(s, mod, url, publisher, article):
         try:
           if link.parent['class'][0] not in ['prev-page', 'next-page', 'wp-caption']:
             links.append(link['href'])
-            print('YES', link['href'], link.parent['class'][0], '\n')
+            # print('YES', link['href'], link.parent['class'][0], '\n')
         except Exception as e:
           links.append(link['href'])
-          print('YES', link['href'], '\n')
+          # print('YES', link['href'], '\n')
 
       article['links'] = links
 
@@ -105,11 +115,11 @@ def scraper(s, mod, url, publisher, article):
         for p in pp:
           copy.append(p.text)
       except Exception as e:
-        print('try other layout format (IMG)', e)
+        # print('try other layout format (IMG)', e)
         pp = body.find('div', class_='col-3').find_all('p')[3:]
         # print(pp)
         for p in pp:
-          print('DESC', p)
+          # print('DESC', p)
           copy.append(p.text)
 
       copy = "\n\n".join(copy)
