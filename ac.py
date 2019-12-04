@@ -111,7 +111,7 @@ def scraper(s, mod, url, publisher, article):
         intro = body.find('div', class_='col-6').find('p').text
         copy.append(intro)
         pp = body.find('div', class_='container-4').find_all('p')
-        
+
         for p in pp:
           copy.append(p.text)
       except Exception as e:
@@ -131,7 +131,7 @@ def scraper(s, mod, url, publisher, article):
 
   #-- imgs
   img_urls = []
-  for img in soup.select('img[class*="wp-post-image"]'):
+  for img in soup.select('img[class*="wp-image"]'):
     img_urls.append(img['src'])
 
   img_store = []
