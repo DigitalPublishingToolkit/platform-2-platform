@@ -119,8 +119,10 @@ def scraper(s, mod, url, publisher, article):
 
   #-- imgs
   img_urls = []
-  for figure in soup.find_all('figure'):
-    img_urls.append(figure.find('img')['src'])
+  for gallery in soup.find_all('div', 'imageGallery'):
+    print('GALLERY', gallery)
+    for figure in gallery.find_all('figure'):
+      img_urls.append(figure.find('img')['src'])
 
   img_store = []
   #-- write imgs
