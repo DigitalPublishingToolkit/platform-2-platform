@@ -57,10 +57,9 @@ def scraper(s, mod, url, publisher, article):
 
   get_author()
 
-  # is the footnotes div set on `display:block` after the page has loaded?
   footnotes = soup.find('div', id='rawFootnotes').contents
   print(type(footnotes))
-
+ 
   if len(footnotes) > 0:
     try:
       #-- try to grab href if there's one
