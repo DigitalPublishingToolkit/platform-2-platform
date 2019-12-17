@@ -115,7 +115,7 @@ def scraper(s, mod, url, publisher, article):
         for p in pp:
           copy.append(p.text)
       except Exception as e:
-        # print('try other layout format (IMG)', e)
+        print('try other layout format (IMG)', e)
         pp = body.find('div', class_='col-3').find_all('p')[3:]
         # print(pp)
         for p in pp:
