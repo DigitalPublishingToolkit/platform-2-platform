@@ -124,6 +124,9 @@ def scraper(s, mod, url, publisher, article):
     for figure in gallery.find_all('figure'):
       img_urls.append(figure.find('img')['src'])
 
+  for figure in soup.find_all('span', 'footnote-image'):
+    img_urls.append(figure.find('img')['src'])
+
   img_store = []
   #-- write imgs
   for url in img_urls:
