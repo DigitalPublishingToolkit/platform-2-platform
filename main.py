@@ -8,11 +8,14 @@ import osr
 import text_processing
 import save_to_db
 import get_from_db
-from datetime import timezone
+from datetime import timezone, timedelta
 import ciso8601
 import csv
+from collections import Counter
 import logging
+
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+
 
 # ---------------------------------------------------
 # run scraper with list of urls to check for scraping
@@ -58,16 +61,18 @@ def main(name, articles):
     data = r.text
 
     #-- make dict with { <lastmod>: <url> }
-    soup = BeautifulSoup(data, "lxml")
+    sm = BeautifulSoup(data, "lxml")
 
-    def get_sitemap(data, key, arr):
-      for item in data.find_all(key):
-        arr.append(item.text)
+    sm_index = []
+    for item in sm.find_all('url'):
+      url = item.find('loc')
+      ts = item.find('lastmod')
+      if ts is not None:
+        entry = (ts.text, url.text)
+        sm_index.append(entry)
 
-    url = []
-    mod = []
-    get_sitemap(soup, 'loc', url)
-    get_sitemap(soup, 'lastmod', mod)
+    # url = []
+    # mod = []
 
     # for online-open (and anyone else), let's force add a UTC timezone
     # at the end of the date-timestamp, so we can match the date-timestamp
@@ -75,8 +80,29 @@ def main(name, articles):
     # (this means a `+00:00` after `2019-07-04T22:00:00`, therefore
     # all date-timestamp are now in the full isodate format of
     # `2019-07-04T22:00:00+00:00`
-    mod = [ciso8601.parse_datetime(mod).astimezone(tz=timezone.utc).isoformat() for mod in mod]
-    last_mod = dict(zip(mod, url))
+    # mod = [ciso8601.parse_datetime(mod).astimezone(tz=timezone.utc).isoformat() for mod in mod]
+
+    mod_t = []
+    c = Counter()
+    for item in sm_index:
+      item_y = ciso8601.parse_datetime(item[0]).astimezone(tz=timezone.utc).isoformat()
+      if item_y in mod_t:
+        c.update({item_y: 1})
+        print(c)
+
+        item = ciso8601.parse_datetime(item[0]).astimezone(tz=timezone.utc)
+        # <https://stackoverflow.com/a/100345>
+        # use c = Counter to *monotonically* increase the timestamp of <modlast> items with only the date, by 1 sec each time
+        tt = item + timedelta(0,c[item_y])
+        t = tt.isoformat()
+        mod_t.append(t)
+      else:
+        t = ciso8601.parse_datetime(item[0]).astimezone(tz=timezone.utc).isoformat()
+        mod_t.append(t)
+
+    url = [x[1] for x in sm_index]
+    last_mod = dict(zip(mod_t, url))
+    print('LASTMOD', last_mod)
 
     datb_mod = get_from_db.get_mod(publisher)
 
