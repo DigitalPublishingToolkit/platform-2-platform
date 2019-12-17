@@ -99,6 +99,13 @@ def scraper(s, mod, url, publisher, article):
         if item is not None:
           pp.append(item)
 
+        # scan for links throughout `body`
+        links = []
+        for link in block.find_all('a', href=True):
+            links.append(link['href'])
+
+        article['links'] = links
+
       copy = []
       for p in pp:
         for item in p:
