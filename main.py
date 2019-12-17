@@ -38,7 +38,7 @@ def main(name, articles):
   if(sys.argv[2] == 'sc'):
     #-- get sitemap
     sitemap = {'ac': 'https://amateurcities.com/post-sitemap.xml',
-               'oo': 'https://www.onlineopen.org/sitemap.xml',
+               'oo': 'https://onlineopen.org/sitemap.xml',
                'os': 'http://hub.openset.nl/backend/wp-json',
                'osr': 'http://openset.nl/reader/pocket/api/get.php?type=root&id=root'}
 

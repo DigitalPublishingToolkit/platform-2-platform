@@ -127,7 +127,7 @@ def scraper(s, mod, url, publisher, article):
       os.makedirs(dir_path)
 
     # https://stackoverflow.com/a/18043472
-    full_url = 'https://www.onlineopen.org/' + url
+    full_url = 'https://onlineopen.org/' + url
     r = requests.get(full_url, stream=True)
     if not os.path.exists(dir_path + '/' + fn):
       with open(dir_path + '/' + fn, 'wb') as outf:
