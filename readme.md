@@ -30,6 +30,10 @@ Whenever you need to install a new python module, do
 
     $ pipenv install <package-name>
     
+Last, download NLTK dataset:
+
+    $ python -m nltk.downloader all
+    
 Packages will be saved into `Pipfile` and `Pipfile.lock`. You can then do `pipenv install` to install your list of packages from the `Pipfile`. This is similar to how `npm` and `package.json` work.
 
 ## Scraper
