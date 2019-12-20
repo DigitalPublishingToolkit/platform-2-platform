@@ -113,6 +113,46 @@ def get_publisher_matched(publisher):
     if conn is not None:
       conn.close()
       print('db connection closed')
+
+def get_match_progress():
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    #-- get list of publishers and take out the one passed
+    cur.execute("SELECT DISTINCT publisher FROM metadata")
+    pubs = cur.fetchall()
+    pubs = get_flat_list(pubs)
+
+    index = []
+    for publisher in pubs:
+      #-- get publisher's total number of articles
+      cur.execute("SET TIME ZONE 'UTC'; SELECT COUNT(*) FROM metadata WHERE publisher = '%s';" % (publisher,))
+      total = cur.fetchone()[0]
+
+      #-- get publisher's number of matched articles
+      cur.execute("SET TIME ZONE 'UTC'; SELECT COUNT(*) FROM feedback WHERE input_publisher = '%s' OR match_publisher = '%s';" % (publisher, publisher,))
+      matched = cur.fetchone()[0]
+
+      #-- make dict
+      entry = {'publisher': publisher,
+               'total': total,
+               'matched': matched}
+
+      index.append(entry)
+
+    return index
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
 def get_publisher_unmatched(publisher):
   conn = None
   try:
