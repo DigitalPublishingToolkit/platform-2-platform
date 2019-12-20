@@ -5,6 +5,8 @@ from nltk.corpus import stopwords
 from nltk import ngrams, FreqDist
 from nltk import pos_tag
 import re
+import time
+import json
 
 #-- text-clean-up
 def text_cu(text):
@@ -49,7 +51,63 @@ def pos(corpus, article):
 
   return words
 
-def tags_filter(tags):
+def tags_filter(tags, flag):
+  #-- `online-open` tag conversion
+  if flag is True:
+    oo_tags = {"commons": "commons",
+               "labour": "labour",
+               "money": "finance and money",
+               "": "commodification",
+               "capitalism": "capitalism",
+               "memory": "archive-memory",
+               "": "anti-disciplinarity",
+               "research": "learning",
+               "research": "open! academy",
+               "public domain":  "public domain",
+               "image": "image-representation",
+               "art discourse": "image-representation",
+               "architecture": "architecture",
+               "theory-reflection": "critical theory",
+               "theory-reflection": "philosophy",
+               "media": "media society",
+               "": "technology",
+               "": "mobility",
+               "urban space": "citizenship",
+               "biopolitics": "control",
+               "control": "control",
+               "discrimination": "inequity",
+               "discrimination": "colonization",
+               "activism": "alternatives",
+               "": "futures",
+               "activism": "activism",
+               "": "wicked problems",
+               "public space": "public space",
+               "conflict": "conflict",
+               "research": "methods",
+               "ecology": "ecologies",
+               "": "care"}
+
+    tags_oo = []
+    tags_oo_missing = []
+    print('OO TAGS INPUT', tags['tags'])
+    for tag in tags['tags']:
+      try:
+        tags_oo.append(oo_tags[tag.lower()])
+      except Exception as e:
+        print('tag not in list', e)
+        article = {'title': tags['title'],
+                   'url': tags['url'],
+                   'tags': tags['tags']}
+
+        tags_oo_missing.append(article)
+
+    timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+    filename = 'oo-tags_missing' + '_' + timestamp
+    with open('dump/%s.json' % filename, 'w') as fp:
+      json.dump(tags_oo_missing, fp)
+
+    tags = tags_oo
+
   tags_master = ['commons',
                  'labour',
                  'finance and money',
@@ -80,10 +138,12 @@ def tags_filter(tags):
                  'care']
 
   taglist = []
+  print('TAGS OO POST', tags)
   for tag in tags:
     if tag.lower() in tags_master:
       taglist.append(tag.lower())
 
+  print('TAGLIST', taglist)
   return taglist
 
 #-- word-frequency
@@ -123,7 +183,8 @@ def phrases_freq(text, size, article):
 
   # article['relevancy'] = relevancy
 
-def process_metadata(input, article):
+def process_metadata(input, article, publisher):
+  print(publisher)
   article = {"mod": input['mod'],
              "url": input['url'],
              "title": input['title'],
@@ -144,10 +205,18 @@ def process_metadata(input, article):
     item = item.strip()
     authors.append(item)
 
-  print(authors)
   article['author'] = authors
 
-  tags = tags_filter(input['tags'])
+  tags = []
+  if publisher == 'online-open':
+    print('ciao', publisher)
+    oo = {'title': input['title'],
+             'url': input['url'],
+             'tags': input['tags']}
+    tags = tags_filter(oo, True)
+  else:
+    tags = tags_filter(input['tags'], False)
+
   article['tags'] = tags
 
   body = re.sub(r'&nbsp', ' ', input['body'])
