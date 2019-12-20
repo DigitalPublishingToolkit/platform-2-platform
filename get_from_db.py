@@ -16,6 +16,23 @@ def get_labels(cur, table):
   labels = get_flat_list(labels)
   return labels
 
+def get_feedback_articles():
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    cur.execute("SET TIME ZONE 'UTC'; SELECT * FROM feedback;")
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
 def get_feedback_matches():
   conn = None
   try:
@@ -262,6 +279,7 @@ def get_mod(publisher):
     cur = conn.cursor()
 
     cur.execute("SELECT DISTINCT url FROM scraper WHERE publisher = %s;", (publisher,))
+    
     urls = cur.fetchall()
     urls = get_flat_list(urls)
 
@@ -343,9 +361,12 @@ def get_allarticles():
     feedbacks = get_feedback_matches()
     cur.close()
 
+    #-- article matching is based on db article id
+    #-- `input_id` is not part of `feedback`, but comes
+    #-- from `metadata`; check `get_feedback_matches`
     def make_index(index, labels, values):
       for article in values:
-        matches = [x for x in feedbacks if x['input_id'] == article[7]]
+        matches = [x for x in feedbacks if x['input_id'] == article[0]]
 
         article = list(article)
         article.append(matches)
@@ -441,9 +462,10 @@ def get_pub_articles(publisher):
     feedbacks = get_feedback_matches()
     cur.close()
 
+    #-- article matching is based on db article id
     def make_index(index, labels, values):
       for article in values:
-        matches = [x for x in feedbacks if x['input_id'] == article[7]]
+        matches = [x for x in feedbacks if x['input_id'] == article[0]]
 
         article = list(article)
         article.append(matches)
