@@ -61,6 +61,58 @@ def get_feedback_matches():
       conn.close()
       print('db connection closed')
 
+def get_publisher_matched(publisher):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    def get_articles_matched(field, publisher):
+      cur.execute("""
+        SET TIME ZONE 'UTC';
+        SELECT
+        metadata.id input_id,
+        metadata.title,
+        metadata.url,
+        feedback.id match_id,
+        feedback.input_title,
+        feedback.input_publisher,
+        feedback.match_title,
+        feedback.match_publisher
+        FROM metadata INNER JOIN feedback
+        ON metadata.title = feedback.%s AND feedback.input_publisher = '%s';
+        """ % (field, publisher,))
+
+      cross_q = cur.fetchall()
+      articles = [list(item) for item in cross_q]
+
+      index = []
+      for item in articles:
+        article = {'title': item[4],
+                   'url': item[2],
+                   'publisher': item[5]}
+
+        index.append(article)
+
+      return index
+
+    try:
+      articles = get_articles_matched('input_title', publisher)
+      return articles
+    except Exception as e:
+      print('feedback.input_title != metadata.title', e)
+
+      articles = get_articles_matched('match_title', publisher)
+      return articles
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
 def get_publisher_unmatched(publisher):
   conn = None
   try:
