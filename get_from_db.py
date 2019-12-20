@@ -1,6 +1,7 @@
 import psycopg2
 from psycopg2.extras import register_composite
 from config import config
+import json
 
 #-- utils
 
@@ -52,6 +53,39 @@ def get_feedback_matches():
       feedbacks.append(feedback)
 
     return feedbacks
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
+def get_publisher_unmatched(publisher):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    cur.execute("SET TIME ZONE 'UTC'; SELECT title,url,publisher FROM metadata WHERE publisher = '%s'" % (publisher,))
+
+    values = cur.fetchall()
+    articles = []
+    make_index(articles, ['title', 'url', 'publisher'], values)
+
+    articles_matched = get_publisher_matched(publisher)
+
+    # convert list of dictionaries to set of dictionaries, <https://stackoverflow.com/a/39204359>
+    articles_set = set(json.dumps(item, sort_keys=True) for item in articles)
+    articles_matched_set = set(json.dumps(item, sort_keys=True) for item in articles_matched)
+
+    articles_diff = articles_set.difference(articles_matched_set)
+    # convert set of dictionaries to list of dictionaries by using `json.loads`
+    articles_unmatched = list(json.loads(item) for item in articles_diff)
+
+    return articles_unmatched
 
   except (Exception, psycopg2.DatabaseError) as error:
     print('db error:', error)

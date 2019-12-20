@@ -32,6 +32,11 @@ class Articles_Random(Resource):
     article = get_from_db.get_random_article()
     return article
 
+class Articles_Publisher_Unmatched(Resource):
+  def get(self, publisher):
+    articles = get_from_db.get_publisher_unmatched(publisher)
+    return articles
+
 class Ask(Resource):
   # js object = {
   #   article_title: '',
@@ -84,6 +89,7 @@ api.add_resource(Articles_All_WF, '/api/articles-wf')
 api.add_resource(Articles_Publisher, '/api/articles/<string:publisher>')
 api.add_resource(Articles_Publisher_WF, '/api/articles-wf/<string:publisher>')
 api.add_resource(Articles_Random, '/api/article/random')
+api.add_resource(Articles_Publisher_Unmatched, '/api/articles/<string:publisher>/unmatched')
 api.add_resource(Ask, '/api/ask')
 api.add_resource(Send, '/api/send')
 
