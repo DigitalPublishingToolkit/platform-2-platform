@@ -216,7 +216,10 @@ def vector_tokenize(input, article):
     print('TITLE parser', e)
 
   try:
-    article['author'] = tokenize(input['author'], False)
+    authors = []
+    for item in input['author']:
+      authors.append(item)
+    article['author'] = authors
   except Exception as e:
     print('AUTHOR parser', e)
 
