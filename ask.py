@@ -11,8 +11,9 @@ def ask(title, publisher, article_id, labels):
 
     # -- get corpuses from all pubs except the one passed as `arg`
     input_corpus = get_from_db.get_corpus(publisher, **labels)
-    # print(input_corpus['index'], len(input_corpus['data']))
-    # print(input_corpus['data'])
+    print('INPUT_CORPUS')
+    print(input_corpus['index'], len(input_corpus['data']))
+    print(input_corpus['data'])
 
     dictionary = corpora.Dictionary(input_corpus['data'])
     # print(dictionary)
@@ -21,7 +22,7 @@ def ask(title, publisher, article_id, labels):
     # print(corpus)
 
     documents = [TaggedDocument(doc, [i]) for i, doc in enumerate(input_corpus['data'])]
-    # print(documents)
+    print('DOCUMENTS', documents)
 
     pubs = ['amateur-cities', 'online-open', 'open-set-reader']
     pubs.remove(publisher)
@@ -128,7 +129,7 @@ def ask(title, publisher, article_id, labels):
       results = []
       for index, (tag_id, rate) in enumerate(sims):
         if (rate >= 0.1):
-          # print(index, tag_id, rate)
+          print('INDEX, TAG_ID, RATE', index, tag_id, rate)
           mod = metadata[documents[index].tags[0]]['mod'],
           url = metadata[documents[index].tags[0]]['url'],
           title = metadata[documents[index].tags[0]]['title']
