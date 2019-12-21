@@ -14,7 +14,7 @@ def scraper(s, slug, article):
   article['mod'] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
   article['url'] = 'http://openset.nl/reader/#!/article/' + slug
 
-  article['title'] = entry['title'].replace('<\br>\n', '')
+  article['title'] = entry['title'].replace('<\br>\n', '').replace('<br>', '')
   article['abstract'] = ''
 
   article['publisher'] = 'open-set-reader'
