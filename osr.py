@@ -21,16 +21,15 @@ def scraper(s, slug, article):
 
   def tags(path, title):
     taglist = []
-    with open(path) as tsv:
-      tsv = csv.reader(tsv, delimiter='\t')
-
-      for row in tsv:
-        if row[0] == title:
+    with open(path) as table:
+      reader = csv.reader(table, delimiter=';')
+      for row in reader:
+        if row[1] == article['url']:
           taglist = row[2].lower().strip().split('\n')
 
     article['tags'] = taglist
 
-  tags('store/open-set-articles.tsv', article['title'])
+  tags('store/open-set-articles.csv', article['title'])
 
   author = entry['author']
   # try:

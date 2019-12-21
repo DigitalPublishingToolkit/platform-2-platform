@@ -207,14 +207,19 @@ def main(name, articles):
         elif (name == 'osr'):
           def get_sitemap(path):
             slugs = []
-            with open(path) as tsv:
-              tsv = csv.reader(tsv, delimiter='\t')
-              for row in tsv:
+            # with open(path) as tsv:
+            #   tsv = csv.reader(tsv, delimiter='\t')
+            #   for row in tsv:
+                # slugs.append(row[1].split('/')[-1])
+
+            with open(path) as table:
+              reader = csv.reader(table, delimiter=';')
+              for row in reader:
                 slugs.append(row[1].split('/')[-1])
 
             return slugs
 
-          slug_list = get_sitemap('store/open-set-articles.tsv')
+          slug_list = get_sitemap("store/open-set-articles.csv")
           print(slug_list)
 
           if mod_list['count'] >= 0 and mod_list['action'] == 'add':
