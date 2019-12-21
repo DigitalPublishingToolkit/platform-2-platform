@@ -714,3 +714,39 @@ def get_article_corpus(article_id, *args):
     if conn is not None:
       conn.close()
       print('db connection closed')
+
+def get_empty_tags(pub):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    cur.execute("""
+      SELECT
+      metadata.url,
+      scraper.tags
+      FROM metadata
+      LEFT JOIN scraper ON metadata.url = scraper.url
+      WHERE metadata.tags = '{}' AND metadata.publisher='%s';
+      """ % (pub,))
+
+    values = cur.fetchall()
+    cur.close()
+
+    articles = []
+    for item in values:
+      item = {'url': item[0],
+              'tags': item[1]}
+
+      articles.append(item)
+
+    return articles
+    
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')

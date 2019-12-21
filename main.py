@@ -276,6 +276,23 @@ def main(name, articles):
     print('tv')
     # ask.ask()
 
+  # 5. tags
+  # check for empty tags in `metadata` and
+  # bring back original tags from `scraper`
+  elif (sys.argv[2] == 'tags'):
+    articles = get_from_db.get_empty_tags(publisher)
+
+    tags_i = [item['tags'] for item in articles]
+    tags_db = [l[0] for l in tags_i]
+
+    tags = set(tags_db)
+
+    for article in articles:
+      for k,v in article.items():
+        print(v)
+
+    for tag in tags:
+      print('- ', tag)
 
 if __name__ == '__main__':
   main(sys.argv[1], articles)
