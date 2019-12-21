@@ -230,7 +230,7 @@ def process_metadata(input, article, publisher):
 
 def process_tokens(input, article):
   try:
-    tags = tags_filter(input['tags'])
+    tags = tags_filter(input['tags'], False)
     article['tags'] = tags
   except Exception as e:
       print('TAGS parser', e)

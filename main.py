@@ -245,9 +245,8 @@ def main(name, articles):
     for item in articles:
       try:
         article_metadata = {}
-
-        metadata = text_processing.process_metadata(item, article_metadata)
-        save_to_db.metadata(metadata)
+        metadata = text_processing.process_metadata(item, article_metadata, publisher)
+        # save_to_db.metadata(metadata)
       except Exception as e:
         print('text-processing ERROR:', e)
 
