@@ -6,7 +6,6 @@ from nltk import ngrams, FreqDist
 from nltk import pos_tag
 import re
 import time
-import json
 
 #-- text-clean-up
 def text_cu(text):
@@ -87,23 +86,12 @@ def tags_filter(tags, flag):
                "": "care"}
 
     tags_oo = []
-    tags_oo_missing = []
-    print('OO TAGS INPUT', tags['tags'])
     for tag in tags['tags']:
       try:
         tags_oo.append(oo_tags[tag.lower()])
+        print(tag.lower(), '=>', oo_tags[tag.lower()])
       except Exception as e:
         print('tag not in list', e)
-        article = {'title': tags['title'],
-                   'url': tags['url'],
-                   'tags': tags['tags']}
-
-        tags_oo_missing.append(article)
-
-    timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-    filename = 'oo-tags_missing' + '_' + timestamp
-    with open('dump/%s.json' % filename, 'w') as fp:
-      json.dump(tags_oo_missing, fp)
 
     tags = tags_oo
 
@@ -137,12 +125,11 @@ def tags_filter(tags, flag):
                  'care']
 
   taglist = []
-  print('TAGS OO POST', tags)
   for tag in tags:
     if tag.lower() in tags_master:
       taglist.append(tag.lower())
 
-  print('TAGLIST', taglist)
+  # print('TAGLIST', taglist)
   return taglist
 
 #-- word-frequency

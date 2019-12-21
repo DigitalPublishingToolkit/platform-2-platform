@@ -207,11 +207,6 @@ def main(name, articles):
         elif (name == 'osr'):
           def get_sitemap(path):
             slugs = []
-            # with open(path) as tsv:
-            #   tsv = csv.reader(tsv, delimiter='\t')
-            #   for row in tsv:
-                # slugs.append(row[1].split('/')[-1])
-
             with open(path) as table:
               reader = csv.reader(table, delimiter=';')
               for row in reader:
@@ -246,7 +241,7 @@ def main(name, articles):
       try:
         article_metadata = {}
         metadata = text_processing.process_metadata(item, article_metadata, publisher)
-        # save_to_db.metadata(metadata)
+        save_to_db.metadata(metadata)
       except Exception as e:
         print('text-processing ERROR:', e)
 
