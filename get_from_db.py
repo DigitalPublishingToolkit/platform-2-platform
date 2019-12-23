@@ -150,15 +150,21 @@ def get_match_progress():
       cur.execute("SET TIME ZONE 'UTC'; SELECT COUNT(*) FROM metadata WHERE publisher = '%s';" % (publisher,))
       total = cur.fetchone()[0]
 
-      cur.execute("SET TIME ZONE 'UTC'; SELECT COUNT(DISTINCT input_title) FROM feedback WHERE input_publisher = '%s';" % (publisher,))
-      input = cur.fetchone()[0]
+      def get_pub_titles(field_title, field_pub, pub):
+        cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT %s FROM feedback WHERE %s = '%s';" % (field_title, field_pub, pub,))
+        articles = cur.fetchall()
+        return [i[0] for i in articles if i[0] != '']
 
-      cur.execute("SET TIME ZONE 'UTC'; SELECT COUNT(DISTINCT match_title) FROM feedback WHERE match_publisher = '%s';" % (publisher,))
-      match = cur.fetchone()[0]
+      input_articles = get_pub_titles('input_title', 'input_publisher', publisher)
+      match_articles = get_pub_titles('match_title', 'match_publisher', publisher)
 
-      matched = input + match
+      articles = input_articles + match_articles
+      print(articles)
+      print(set(articles))
 
-      #-- make dict
+      matched = len(set(articles))
+
+      # -- make dict
       entry = {'publisher': publisher,
                'total': total,
                'matched': matched}
