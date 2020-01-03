@@ -181,24 +181,21 @@ def process_metadata(input, article, publisher):
              "links": input['links'],
              "refs": input['refs']}
 
-  article['title'] = re.sub(r'&nbsp', ' ', input['title'])
-  article['abstract'] = re.sub(r'&nbsp', ' ', input['abstract'])
+  article['title'] = input['title'].replace('&nbsp', ' ').replace('\n', '')
+  article['abstract'] = input['abstract'].replace('&nbsp', ' ').replace('\n', '')
 
   authors = []
   for item in input['author']:
-    item = re.sub(r'&nbsp', ' ', item)
-    item = re.sub(r' ;', ' ', item)
-    item = item.strip()
+    item = item.replace('&nbsp', ' ').replace(' ;', ' ').strip()
     authors.append(item)
 
   article['author'] = authors
 
   tags = []
   if publisher == 'online-open':
-    print('ciao', publisher)
     oo = {'title': input['title'],
-             'url': input['url'],
-             'tags': input['tags']}
+          'url': input['url'],
+          'tags': input['tags']}
     tags = tags_filter(oo, True)
   else:
     tags = tags_filter(input['tags'], False)
@@ -279,7 +276,7 @@ def vector_tokenize(input, article):
     print('AUTHOR parser', e)
 
   try:
-    tags = tags_filter(input['tags'])
+    tags = tags_filter(input['tags'], False)
     article['tags'] = tags
   except Exception as e:
       print('TAGS parser', e)
