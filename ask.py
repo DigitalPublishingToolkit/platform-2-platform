@@ -7,70 +7,68 @@ import text_processing
 def ask(title, publisher, article_id, labels):
     # -- get article metadata from all pubs except the one passed as `arg`
     metadata = get_from_db.get_metadata(publisher)
-    # print(metadata)
+    # print('METADATA', metadata)
 
     # -- get corpuses from all pubs except the one passed as `arg`
     input_corpus = get_from_db.get_corpus(publisher, **labels)
-    print('INPUT_CORPUS')
-    print(input_corpus['index'], len(input_corpus['data']))
-    print(input_corpus['data'])
+    # print('INPUT_CORPUS')
+    # print(input_corpus['index'], len(input_corpus['data']))
+    # print(input_corpus['data'])
 
-    dictionary = corpora.Dictionary(input_corpus['data'])
+    # dictionary = corpora.Dictionary(input_corpus['data'])
     # print(dictionary)
 
-    corpus = [dictionary.doc2bow(text) for text in input_corpus['data']]
+    # corpus = [dictionary.doc2bow(text) for text in input_corpus['data']]
     # print(corpus)
 
     documents = [TaggedDocument(doc, [i]) for i, doc in enumerate(input_corpus['data'])]
-    print('DOCUMENTS', documents)
+    # print('DOCUMENTS', documents)
 
     pubs = ['amateur-cities', 'online-open', 'open-set-reader']
     pubs.remove(publisher)
     fn_model = '_'.join(pubs)
 
+    def model_training(model, documents):
+      model.train(documents, total_examples=model.corpus_count, epochs=model.epochs)
+      print('model is training')
+      return model
+
     # setup model
     def model_setup(documents, fname):
-      model = Doc2Vec(documents, dm=1, vector_size=50, window=2, iter=10, min_count=2, workers=4, epochs=40)
-      # model.build_vocab(documents)
-      print('model initialized', model)
+      # model = Doc2Vec(documents, dm=1, vector_size=50, window=2, min_count=2, workers=4, epochs=40)
+      # <https://radimrehurek.com/gensim/auto_examples/tutorials/run_doc2vec_lee.html#training-the-model>
+
+      model = Doc2Vec(vector_size=50, min_count=2, epochs=40)
+
+      #-- run model.build_vocab once when creating model file?
+      model.build_vocab(documents)
+
+      # print('model initialized', model)
 
       # save model to disk
       model.save(fname)
       return model
 
     #-- check if having to build new model again
-    # by loading model saved to disk, if it fails
-    # build model anew
+    # by loading model saved to disk,
+    # if it fails
     try:
       model = Doc2Vec.load(fn_model)
-      # model.build_vocab(documents)
+      model_training(model, documents)
     except Exception as e:
       print('model could not be loaded', e)
       model = model_setup(documents, fn_model)
 
-    # NOT
-    # model.build_vocab(documents)
-    # print
     model_vocab = [word for word in model.wv.vocab]
-    # print(model_vocab)
+    print(model_vocab)
 
     # -- this return word token and representation of it in vector space
-    # my_dict = dict({})
-    # for idx, key in enumerate(model.wv.vocab):
-    #     my_dict[key] = model.wv[key]
-    #     # my_dict[key] = model.wv.get_vector(key)
-    #     # my_dict[key] = model.wv.word_vec(key, use_norm=False)
-    # print(my_dict)
-
-    def model_training(model, documents):
-      model.train(documents, total_examples=model.corpus_count, epochs=model.epochs)
-      return model
-
-    try:
-      if (sys.argv[3] == 'train'):
-        model = model_training(model, documents)
-    except Exception as e:
-      print('no `train` flag', e)
+    my_dict = dict({})
+    for idx, key in enumerate(model.wv.vocab):
+        my_dict[key] = model.wv[key]
+        # my_dict[key] = model.wv.get_vector(key)
+        # my_dict[key] = model.wv.word_vec(key, use_norm=False)
+    print(my_dict)
 
     article = {}
     #-- convert labels dict to list, pass it to `get_specific_article`
@@ -84,18 +82,20 @@ def ask(title, publisher, article_id, labels):
     else:
       text_processing.vector_tokenize(words, article)
 
-      td = TaggedDocument(article, 1)
+      # td = TaggedDocument(article, 1)
 
-      inferred_vector = model.infer_vector(td[0])
-      print(inferred_vector)
+      # inferred_vector = model.infer_vector(td[0])
+      inferred_vector = model.infer_vector(article)
+      print('INFERRED_VECTOR', inferred_vector)
+
       #-- we get our most-similar results as documents,
       #-- we set `topn` to return the n of results we want to have
       # sims = model.docvecs.most_similar([inferred_vector], topn=len(documents))
       sims = model.docvecs.most_similar([inferred_vector], topn=100)
 
-      # print('SIMS', sims)
-      # print('DOC', documents)
-      # print('DOC-LEN', len(documents))
+      print('SIMS', sims)
+      print('DOC', documents)
+      print('DOC-LEN', len(documents))
 
       model_vocab = [word for word in model.wv.vocab]
       s_model_tk = set(model_vocab)
@@ -164,7 +164,7 @@ def ask(title, publisher, article_id, labels):
           token_dict = {}
           tokens = text_processing.process_tokens(article, token_dict)
           tokens = [v for k, v in tokens.items() if k in labels]
-          print('TOKENS FILTERED', tokens)
+          # print('TOKENS FILTERED', tokens)
           vocab = get_article_vocab(tokens)
 
           article['vocabulary'] = vocab

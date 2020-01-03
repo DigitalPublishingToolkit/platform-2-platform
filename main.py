@@ -8,6 +8,7 @@ import osr
 import text_processing
 import save_to_db
 import get_from_db
+from ask import ask
 from datetime import timezone, timedelta
 import ciso8601
 import csv
@@ -271,10 +272,13 @@ def main(name, articles):
         print('text-processing ERROR:', e)
 
   # -------------------
-  # 4. send suggestions
-  elif (sys.argv[2] == 'tv'):
-    print('tv')
-    # ask.ask()
+  # 4. train model
+  # -- do it once as init process
+  elif (sys.argv[2] == 'tm'):
+    print(publisher, 'tm')
+    ask(train=True)
+    # ask.ask(train)
+
 
   # 5. tags
   # check for empty tags in `metadata` and
