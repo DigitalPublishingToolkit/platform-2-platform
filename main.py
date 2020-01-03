@@ -93,7 +93,7 @@ def main(name, articles):
         item = ciso8601.parse_datetime(item[0]).astimezone(tz=timezone.utc)
         # <https://stackoverflow.com/a/100345>
         # use c = Counter to *monotonically* increase the timestamp of <modlast> items with only the date, by 1 sec each time
-        tt = item + timedelta(0,c[item_y])
+        tt = item + timedelta(0, c[item_y])
         t = tt.isoformat()
         mod_t.append(t)
       else:
@@ -288,11 +288,12 @@ def main(name, articles):
     tags = set(tags_db)
 
     for article in articles:
-      for k,v in article.items():
+      for k, v in article.items():
         print(v)
 
     for tag in tags:
       print('- ', tag)
+
 
 if __name__ == '__main__':
   main(sys.argv[1], articles)
