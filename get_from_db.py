@@ -555,7 +555,6 @@ def get_pub_articles_word_freq(publisher):
       conn.close()
       print('db connection closed')
 
-#-- get metadata from each publisher
 def get_metadata(publisher):
   conn = None
   try:
@@ -580,6 +579,73 @@ def get_metadata(publisher):
 
     index = []
     make_index(index, labels, values)
+    return index
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
+#-- get metadata for selected publisher
+def get_metadata_for_pub(publisher):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    labels = get_labels(cur, 'metadata')
+
+    cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT %s FROM metadata WHERE publisher = '%s';" % (', '.join(labels), publisher))
+    values = cur.fetchall()
+
+    cur.close()
+
+    index = []
+    make_index(index, labels, values)
+    return index
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
+def get_metadata_from_artid(publisher, artids):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    #-- get list of publishers and take out the one passed
+    cur.execute("SELECT DISTINCT publisher FROM metadata")
+    pubs = cur.fetchall()
+    pubs = get_flat_list(pubs)
+    pubs.remove(publisher)
+    pubs = tuple(pubs)
+
+    labels = get_labels(cur, 'metadata')
+
+    cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT %s FROM metadata WHERE artid IN %s;" % (', '.join(labels), artids))
+    values = cur.fetchall()
+
+    cur.close()
+
+    # index = []
+    # make_index(index, labels, values)
+
+    index = {}
+    for article in values:
+      items = []
+      article = make_article(items, labels, article)
+      index[article['artid']] = article
+
     return index
 
   except (Exception, psycopg2.DatabaseError) as error:
@@ -680,17 +746,30 @@ def get_corpus(publisher, **labels):
       count = cur.fetchone()[0]
       index[pub] = count
 
-    labels = list(labels.keys())
-    labels = ["token_{0}".format(item) for item in labels]
+    # transform article fields from /ask POST from `title` => `token_title`
+    # to get actual tokens
+    labels_body = list(labels.keys())
+    labels_body = ["token_{0}".format(item) for item in labels_body]
+
+    # add `artid` field to be able to map later on in `ask.py` what's the article to query from db.metadata
+    labels_head = ['artid']
+
+    labels = labels_head + labels_body
 
     cur.execute("SELECT %s FROM tokens WHERE publisher IN %s;" % (",".join(labels), pubs))
-    tokens = cur.fetchall()
-    tokens = get_flat_list(tokens)
+    values = cur.fetchall()
+    cur.close()
+
+    tokens = []
+    for item in values:
+      article = {'artid': item[0],
+                 'tokens': item[1] + item[2] + item[3] + item[4]
+                 }
+      tokens.append(article)
 
     results = {'index': index,
                'data': tokens}
 
-    cur.close()
     return results
 
   except (Exception, psycopg2.DatabaseError) as error:

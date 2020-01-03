@@ -5,7 +5,7 @@ from nltk.corpus import stopwords
 from nltk import ngrams, FreqDist
 from nltk import pos_tag
 import re
-import time
+import hashlib
 
 #-- text-clean-up
 def text_cu(text):
@@ -206,6 +206,9 @@ def process_metadata(input, article, publisher):
   article['body'] = body
 
   links = [url for url in input['links'] if url.startswith('#') is False]
+
+  article['artid'] = hashlib.sha256(str.encode(article['title'])).hexdigest()
+
   article['links'] = links
 
   print('text processing done')
@@ -235,7 +238,7 @@ def process_tokens(input, article):
     article['title'] = tokenize(input['title'], False)
   except Exception as e:
     print('TITLE parser', e)
-    
+
   try:
     article['body'] = tokenize(input['body'], True)
     corpus = tokenize(input['body'], False)
@@ -287,7 +290,6 @@ def vector_tokenize(input, article):
     print('BODY parser', e)
 
   print('text processing done')
-  print(article)
   return article
 
 #-- end

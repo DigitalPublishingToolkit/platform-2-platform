@@ -1,174 +1,100 @@
-import sys
 import get_from_db
-from gensim import corpora
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 import text_processing
 
-def ask(title, publisher, article_id, labels):
-    # -- get article metadata from all pubs except the one passed as `arg`
-    metadata = get_from_db.get_metadata(publisher)
-    # print('METADATA', metadata)
+#-- main ref <https://radimrehurek.com/gensim/auto_examples/tutorials/run_doc2vec_lee.html>
 
+def ask(title, publisher, article_id, labels):
     # -- get corpuses from all pubs except the one passed as `arg`
     input_corpus = get_from_db.get_corpus(publisher, **labels)
-    # print('INPUT_CORPUS')
-    # print(input_corpus['index'], len(input_corpus['data']))
-    # print(input_corpus['data'])
 
-    # dictionary = corpora.Dictionary(input_corpus['data'])
-    # print(dictionary)
+    #-- instead of adding indexical numbers to the tag section of the `TaggedDocument`,
+    # let's add the article['artid'] for later cross retrieval when having to make the final list of similar articles by pulling from db.metadata
+    documents = [TaggedDocument(doc['tokens'], [doc['artid']]) for i, doc in enumerate(input_corpus['data'])]
+    print('DOCUMENTS', documents)
 
-    # corpus = [dictionary.doc2bow(text) for text in input_corpus['data']]
-    # print(corpus)
+    # pubs = ['amateur-cities', 'online-open', 'open-set-reader']
+    # pubs.remove(publisher)
+    # fn_model = '_'.join(pubs)
 
-    documents = [TaggedDocument(doc, [i]) for i, doc in enumerate(input_corpus['data'])]
-    # print('DOCUMENTS', documents)
+    model = Doc2Vec(vector_size=50, min_count=2, epochs=40)
+    print('model initialized', model)
+    model.build_vocab(documents)
 
-    pubs = ['amateur-cities', 'online-open', 'open-set-reader']
-    pubs.remove(publisher)
-    fn_model = '_'.join(pubs)
-
-    def model_training(model, documents):
-      model.train(documents, total_examples=model.corpus_count, epochs=model.epochs)
-      print('model is training')
-      return model
-
-    # setup model
-    def model_setup(documents, fname):
-      # model = Doc2Vec(documents, dm=1, vector_size=50, window=2, min_count=2, workers=4, epochs=40)
-      # <https://radimrehurek.com/gensim/auto_examples/tutorials/run_doc2vec_lee.html#training-the-model>
-
-      model = Doc2Vec(vector_size=50, min_count=2, epochs=40)
-
-      #-- run model.build_vocab once when creating model file?
-      model.build_vocab(documents)
-
-      # print('model initialized', model)
-
-      # save model to disk
-      model.save(fname)
-      return model
-
-    #-- check if having to build new model again
-    # by loading model saved to disk,
-    # if it fails
-    try:
-      model = Doc2Vec.load(fn_model)
-      model_training(model, documents)
-    except Exception as e:
-      print('model could not be loaded', e)
-      model = model_setup(documents, fn_model)
-
-    model_vocab = [word for word in model.wv.vocab]
-    print(model_vocab)
+    model.train(documents, total_examples=model.corpus_count, epochs=model.epochs)
+    print('model is training')
 
     # -- this return word token and representation of it in vector space
-    my_dict = dict({})
-    for idx, key in enumerate(model.wv.vocab):
-        my_dict[key] = model.wv[key]
-        # my_dict[key] = model.wv.get_vector(key)
-        # my_dict[key] = model.wv.word_vec(key, use_norm=False)
-    print(my_dict)
+    # my_dict = dict({})
+    # for idx, key in enumerate(model.wv.vocab):
+    #     my_dict[key] = model.wv[key]
+    #     # my_dict[key] = model.wv.get_vector(key)
+    #     # my_dict[key] = model.wv.word_vec(key, use_norm=False)
+    # print(my_dict)
 
-    article = {}
     #-- convert labels dict to list, pass it to `get_specific_article`
-    labels = [k for k, v in labels.items() if v is True]
+    article = {}
+
+    # add only fields that are True sent from the /ask request
+    # labels = [k for k, v in labels.items() if v is True]
+    # using the above function does not differentiate enough the results from the algorithm,
+    # so we don't use it for now (list of articles is small)
+    labels = [k for k, v in labels.items()]
+
+    # get full article from article id passed through /Ask POST
     words = get_from_db.get_specific_article(article_id, labels)
-    # print('WORDS')
-    # print(words)
 
     if bool(words) is False:
       return {'error': 'article with id %s not found' % article_id}
     else:
       text_processing.vector_tokenize(words, article)
+      vector_l = [item for item in article.values()]
 
-      # td = TaggedDocument(article, 1)
+    # <https://stackoverflow.com/a/952952>
+    # flat-list
+    vector = []
+    for sublist in vector_l:
+      for item in sublist:
+        vector.append(item)
 
-      # inferred_vector = model.infer_vector(td[0])
-      inferred_vector = model.infer_vector(article)
-      print('INFERRED_VECTOR', inferred_vector)
+    # print('VECTOR', vector)
+    inferred_vector = model.infer_vector(vector)
+    # print('INFERRED_VECTOR', inferred_vector)
 
-      #-- we get our most-similar results as documents,
-      #-- we set `topn` to return the n of results we want to have
-      # sims = model.docvecs.most_similar([inferred_vector], topn=len(documents))
-      sims = model.docvecs.most_similar([inferred_vector], topn=100)
+    #-- we get our most-similar results as documents, we set `topn` to return
+    # the n of results we want to have
+    # sims = model.docvecs.most_similar([inferred_vector], topn=len(documents))
+    sims = model.docvecs.most_similar([inferred_vector], topn=100)
 
-      print('SIMS', sims)
-      print('DOC', documents)
-      print('DOC-LEN', len(documents))
+    print('SIMS', sims)
 
-      model_vocab = [word for word in model.wv.vocab]
-      s_model_tk = set(model_vocab)
+    # -- get article metadata from all pubs except the one passed as `arg`
+    artids = tuple([item['artid'] for item in input_corpus['data']])
+    metadata = get_from_db.get_metadata_from_artid(publisher, artids)
 
-      def get_article_vocab(tokens):
-        article_tokens = []
-        for token in tokens:
-          for item in token:
-            if type(item) is list:
-                article_tokens.append(','.join(item))
-            else:
-              article_tokens.append(item)
+    # print('METADATA', metadata)
 
-        # print('article_tokens', article_tokens)
-        # print('model_vocab', len(model_vocab), 'article_tk', len(article_tokens))
+    results = []
+    #-- iterate over SIMS and use tag_id (`artid`) to pick the corresponding
+    # full article from the metadata list of articles
+    for index, (tag_id, rate) in enumerate(sims):
+      if (rate >= 0.1):
+        print('INDEX, TAG_ID, RATE', index, tag_id, rate)
+        article = metadata[tag_id]
 
-        s_article_tk = set(article_tokens)
-        article_vocab = s_article_tk.intersection(s_model_tk)
-        # print('article_vocab', article_vocab, len(article_vocab))
+        score = get_from_db.get_feedback_match(article_id)
 
-        return list(article_vocab)
+        # add `rate` and `score` to article from metadata
+        article.update({'rate': rate}, {'score': score})
 
-      #-- convert `article{}` to a list of values by passing
-      #-- only keys that are part of the `labels` list,
-      #-- which is the list of article fields being requested by Ask
-      #-- and based on which to return a list of article matches
-      article_tokens = [v for k, v in article.items() if k in labels]
+        # token_dict = {}
+        # tokens = text_processing.process_tokens(article, token_dict)
+        # tokens = [v for k, v in tokens.items() if k in labels]
+        # # print('TOKENS FILTERED', tokens)
+        # vocab = get_article_vocab(tokens)
 
-      get_article_vocab(article_tokens)
+        # article['vocabulary'] = vocab
 
-      results = []
-      for index, (tag_id, rate) in enumerate(sims):
-        if (rate >= 0.1):
-          print('INDEX, TAG_ID, RATE', index, tag_id, rate)
-          mod = metadata[documents[index].tags[0]]['mod'],
-          url = metadata[documents[index].tags[0]]['url'],
-          title = metadata[documents[index].tags[0]]['title']
-          publisher = metadata[documents[index].tags[0]]['publisher']
-          abstract = metadata[documents[index].tags[0]]['abstract']
-          tags = metadata[documents[index].tags[0]]['tags']
-          author = metadata[documents[index].tags[0]]['author']
-          body = metadata[documents[index].tags[0]]['body']
-          images = metadata[documents[index].tags[0]]['images']
-          links = metadata[documents[index].tags[0]]['links']
-          refs = metadata[documents[index].tags[0]]['refs']
-          article_id = metadata[documents[index].tags[0]]['id']
-          score = get_from_db.get_feedback_match(article_id)
+      results.append(article)
 
-          article = {
-              'mod': mod[0],
-              'url': url[0],
-              'title': title,
-              'publisher': publisher,
-              'abstract': abstract,
-              'tags': tags,
-              'author': author,
-              'body': body,
-              'images': images,
-              'links': links,
-              'refs': refs,
-              'id': article_id,
-              'rate': rate,
-              'score': score
-          }
-
-          token_dict = {}
-          tokens = text_processing.process_tokens(article, token_dict)
-          tokens = [v for k, v in tokens.items() if k in labels]
-          # print('TOKENS FILTERED', tokens)
-          vocab = get_article_vocab(tokens)
-
-          article['vocabulary'] = vocab
-
-        results.append(article)
-
-      return results
+    return results
