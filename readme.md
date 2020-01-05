@@ -1,4 +1,5 @@
 platform 2 platform
+===================
 
 This project is part of Institute of Network Cultures' [Making Public](http://networkcultures.org/makingpublic/) project.
 
@@ -239,9 +240,9 @@ This call will return an array list of articles, containing all the matches foun
 When running this program on a debian server environment, `Doc2Vec` reported the following problems when using the suggestion algorithm:
 
 ```
-AttributeError: 'Doc2Vec' object has no attribute 'syn0' when call infer_vector
+AttributeError: 'Doc2Vec' object has no attribute 'syn0'
 
-Doc2Vec.infer_vector: AttributeError: 'Doc2Vec' object has no attribute 'syn1'
+AttributeError: 'Doc2Vec' object has no attribute 'syn1'
 ```
 
 Both have been reported already as issues to the gensim github page [#1](https://github.com/RaRe-Technologies/gensim/issues/785) and [#2]((https://github.com/RaRe-Technologies/gensim/issues/483)). It turned out that there seems to be some problem when `Doc2Vec` needs to generate for the first time the model for each new publisher. Somehow it cannot do it and something goes wrong. By copying over the generated models from our macOS environment, the program could work fine.
