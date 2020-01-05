@@ -11,9 +11,10 @@ We're sort of creating a web-ring powered by machine learning.
 ## Diagram
 
 1. python scraper(s)
-2. python text processing
+2. python text processing and tokenization
 3. data saved to postgresql database
-4. javascript script embedded in each journal website, to talk between journal and database
+4. request article matches through `/api/ask`
+5. javascript script embedded in each journal website, to talk between journal and database
 
 ## Setup
 
