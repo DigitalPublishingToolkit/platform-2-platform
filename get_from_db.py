@@ -762,8 +762,12 @@ def get_corpus(publisher, **labels):
 
     tokens = []
     for item in values:
+      tks = []
+      for i in range(1, 4):
+        tks.append(item[i])
+
       article = {'artid': item[0],
-                 'tokens': item[1] + item[2] + item[3] + item[4]
+                 'tokens': tks
                  }
       tokens.append(article)
 
