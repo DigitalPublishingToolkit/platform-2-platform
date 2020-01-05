@@ -8,6 +8,12 @@ def model_setup(documents, fname):
   model = Doc2Vec(vector_size=50, min_count=2, epochs=40)
   print('model initialized', model)
   model.build_vocab(documents)
+  print('model vocabulary built')
+
+  # <https://github.com/RaRe-Technologies/gensim/issues/785#issuecomment-234114412>
+  # > Unrelated notes about your code: by supplying a corpus to the Doc2Vec constructor, training will automatically occur.
+  # model.train(documents, total_examples=model.corpus_count, epochs=model.epochs)
+  # print('model is training')
 
   # save model to disk
   model.save(fname)
@@ -54,8 +60,6 @@ def ask(title, publisher, article_id, labels):
   except Exception as e:
     print('model could not be loaded', e)
     model = model_setup(documents, fn_model)
-    model.train(documents, total_examples=model.corpus_count, epochs=model.epochs)
-    print('model is training')
 
   #-- convert labels dict to list, pass it to `get_specific_article`
   article = {}
