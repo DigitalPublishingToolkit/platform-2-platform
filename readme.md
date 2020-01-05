@@ -245,7 +245,7 @@ AttributeError: 'Doc2Vec' object has no attribute 'syn0'
 AttributeError: 'Doc2Vec' object has no attribute 'syn1'
 ```
 
-Both have been reported already as issues to the gensim github page [#1](https://github.com/RaRe-Technologies/gensim/issues/785) and [#2]((https://github.com/RaRe-Technologies/gensim/issues/483)). It turned out that there seems to be some problem when `Doc2Vec` needs to generate for the first time the model for each new publisher. Somehow it cannot do it and something goes wrong. By copying over the generated models from our macOS environment, the program could work fine.
+Both have been reported already as issues to the gensim github page [#1](https://github.com/RaRe-Technologies/gensim/issues/785) and [#2](https://github.com/RaRe-Technologies/gensim/issues/483). It turned out that there seems to be some problem when `Doc2Vec` needs to generate for the first time the model for each new publisher. Somehow it cannot do it and something goes wrong. By copying over the generated models from our macOS environment, the program could work fine.
 
 This is something to fix before moving this program into a reproducible environment (eg Docker or NixOS).
 
