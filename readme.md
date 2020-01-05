@@ -200,7 +200,7 @@ Subject
 - `ac` Amateur Cities, 
 - `oo` Online Open!, 
 - `osr` Open Set Reader, 
-- `os` Open Set (not used, but good for reference) 
+- `os` Open Set (not used anymore, but good for reference) 
 
 ### Workfow
 
@@ -253,4 +253,4 @@ This is something to fix before moving this program into a reproducible environm
 
 Currently we disabled the option to selectively choose which article fields to use when feeding the algorithm for suggesting new articles. Eg, which content is being used as input data to produce matches. 
 
-This is because results did not change at all, and our impression so far is that it’s because our dataset is very small (~ 600 articles) and Doc2Vec was built to work with thousands of articles (eg average of 50-70 thousands). We’re still working on this and tweaking options in order to see if result would change. Nonetheless, we keep it this option part of the code (both here and in the frontend app) as it would a very interesting element to play with for the publishers during their editorial review matching-process.
+This is because results did not change at all, and our impression so far is that it’s because our dataset is very small (~ 600 articles) and `Doc2Vec` was built to work with thousands of articles (eg average of 50-70 thousands). We’re still working on this and tweaking options in order to see if result would change. Nonetheless, we keep it this option part of the code (both here and in the frontend app) as it would a very interesting element to play with for the publishers during their editorial review matching-process.
