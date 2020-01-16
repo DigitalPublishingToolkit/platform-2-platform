@@ -289,7 +289,7 @@ def get_mod(publisher):
     cur = conn.cursor()
 
     cur.execute("SELECT DISTINCT url FROM scraper WHERE publisher = %s;", (publisher,))
-    
+
     urls = cur.fetchall()
     urls = get_flat_list(urls)
 
@@ -702,7 +702,7 @@ def get_specific_article(article_id, labels):
     cur = conn.cursor()
 
     #-- labels
-    if labels is None:
+    if labels is None or not labels:
       labels = get_labels(cur, 'metadata')
     else:
       labels = labels
