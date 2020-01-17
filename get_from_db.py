@@ -213,6 +213,35 @@ def get_publisher_unmatched(publisher):
       conn.close()
       print('db connection closed')
 
+def get_articles_all_matches():
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    labels = get_labels(cur, 'feedback')
+
+    cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT * FROM feedback")
+    values = cur.fetchall()
+
+    articles = []
+    make_index(articles, labels, values)
+
+    if not articles or articles is None:
+      articles = [{'message': 'no matches yet'}]
+      return articles
+    else:
+      return articles
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
 def get_feedback_match(input_id):
   conn = None
   try:

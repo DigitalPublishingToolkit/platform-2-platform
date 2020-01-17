@@ -52,6 +52,11 @@ class Articles_Publisher_Unmatched(Resource):
     articles = get_from_db.get_publisher_unmatched(publisher)
     return articles
 
+class Articles_All_Matched(Resource):
+  def get(self):
+    articles = get_from_db.get_articles_all_matches()
+    return articles
+
 class Ask(Resource):
   # js object = {
   #   article_title: '',
@@ -106,6 +111,7 @@ api.add_resource(Articles_Publisher_WF, '/api/articles-wf/<string:publisher>')
 api.add_resource(ArticleID, '/api/article/<int:id>')
 api.add_resource(Articles_Random, '/api/article/random')
 api.add_resource(Articles_Progress, '/api/articles/progress')
+api.add_resource(Articles_All_Matched, '/api/articles/all/matched')
 api.add_resource(Articles_Publisher_Matched, '/api/articles/<string:publisher>/matched')
 api.add_resource(Articles_Publisher_Unmatched, '/api/articles/<string:publisher>/unmatched')
 api.add_resource(Ask, '/api/ask')
