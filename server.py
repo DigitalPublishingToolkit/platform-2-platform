@@ -27,9 +27,9 @@ class Articles_Publisher_WF(Resource):
     articles = get_from_db.get_pub_articles_word_freq(publisher)
     return articles
 
-class ArticleID(Resource):
-  def get(self, id):
-    article = get_from_db.get_specific_article(id, [])
+class Article(Resource):
+  def get(self, slug):
+    article = get_from_db.get_article_by_slug(slug, [])
     return article
 
 class Articles_Random(Resource):
@@ -108,7 +108,7 @@ api.add_resource(Articles_All, '/api/articles')
 api.add_resource(Articles_All_WF, '/api/articles-wf')
 api.add_resource(Articles_Publisher, '/api/articles/<string:publisher>')
 api.add_resource(Articles_Publisher_WF, '/api/articles-wf/<string:publisher>')
-api.add_resource(ArticleID, '/api/article/<int:id>')
+api.add_resource(Article, '/api/article/<string:slug>')
 api.add_resource(Articles_Random, '/api/article/random')
 api.add_resource(Articles_Progress, '/api/articles/progress')
 api.add_resource(Articles_All_Matched, '/api/articles/all/matched')

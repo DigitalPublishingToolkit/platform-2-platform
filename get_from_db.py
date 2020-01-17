@@ -759,6 +759,45 @@ def get_specific_article(article_id, labels):
       conn.close()
       print('db connection closed')
 
+#-- get specific article (slug)
+def get_article_by_slug(article_slug, labels):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    #-- labels
+    if labels is None or not labels:
+      labels = get_labels(cur, 'metadata')
+    else:
+      labels = labels
+
+    print(labels)
+
+    cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata WHERE slug = '%s';" % (', '.join(labels), article_slug))
+    article = cur.fetchone()
+    feedbacks = get_feedback_matches()
+    cur.close()
+
+    items = []
+    article = make_article(items, labels, article)
+
+
+    #-- article matching is based on db article id
+    matches = [x for x in feedbacks if x['input_id'] == article['id']]
+    article['matches'] = matches
+
+    return article
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
 #-- get tokens from all pubs except the one passed in the arg
 def get_corpus(publisher, **labels):
   conn = None
