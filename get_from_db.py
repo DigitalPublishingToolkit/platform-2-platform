@@ -740,10 +740,16 @@ def get_specific_article(article_id, labels):
 
     cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata WHERE id = '%s';" % (', '.join(labels), article_id))
     article = cur.fetchone()
+    feedbacks = get_feedback_matches()
     cur.close()
 
     items = []
     article = make_article(items, labels, article)
+
+    #-- article matching is based on db article id
+    matches = [x for x in feedbacks if x['input_id'] == article['id']]
+    article['matches'] = matches
+
     return article
 
   except (Exception, psycopg2.DatabaseError) as error:
