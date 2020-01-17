@@ -42,6 +42,8 @@ def get_article_vocab(tokens, model):
 
   return list(article_vocab)
 
+#--- main func
+
 def ask(title, publisher, article_id, labels):
   # -- get corpuses from all pubs except the one passed as `arg`
   input_corpus = get_from_db.get_corpus(publisher, **labels)
