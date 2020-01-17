@@ -86,20 +86,20 @@ def metadata(article):
     def metadata_update():
       query = """
           UPDATE metadata
-          SET mod = %s, url = %s, title = %s, publisher = %s, abstract = %s, tags = %s, author = %s, body = %s, images = %s, links = %s, refs = %s, artid = %s
+          SET mod = %s, url = %s, title = %s, publisher = %s, abstract = %s, tags = %s, author = %s, body = %s, images = %s, links = %s, refs = %s, hash = %s, slug = %s
           WHERE title = %s;
           """
-      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], article['images'], article['links'], article['refs'], article['artid'], article['title']))
+      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], article['images'], article['links'], article['refs'], article['hash'], article['slug'], article['title']))
       conn.commit()
 
       print('metadata has been UPDATED for publisher %s' % article['publisher'])
 
     def metadata_add():
       query = """
-          insert into metadata (mod, url, title, publisher, abstract, tags, author, body, images, links, refs, artid)
-          values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+          insert into metadata (mod, url, title, publisher, abstract, tags, author, body, images, links, refs, hash, slug)
+          values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
           """
-      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], article['images'], article['links'], article['refs'], article['artid']))
+      cur.execute(query, (article['mod'], article['url'], article['title'], article['publisher'], article['abstract'], article['tags'], article['author'], article['body'], article['images'], article['links'], article['refs'], article['hash'], article['slug']))
       conn.commit()
 
       print('metadata has been ADDED for publisher %s' % article['publisher'])
@@ -134,10 +134,10 @@ def tokens(article):
 
     cur.execute(
         """
-        INSERT INTO tokens (title, publisher, token_title, token_author, token_tags, token_body, word_freq, two_word_freq, three_word_freq, artid)
+        INSERT INTO tokens (title, publisher, token_title, token_author, token_tags, token_body, word_freq, two_word_freq, three_word_freq, hash)
         VALUES (%s, %s, %s, %s, %s, %s, %s::word_freq[], %s, %s, %s);
         """,
-        (article['title'], article['publisher'], article['tokens']['title'], article['author'], article['tokens']['tags'], article['tokens']['body'], article['word_freq'], json.dumps(article['2-word_freq']), json.dumps(article['3-word_freq']), article['artid'])
+        (article['title'], article['publisher'], article['tokens']['title'], article['author'], article['tokens']['tags'], article['tokens']['body'], article['word_freq'], json.dumps(article['2-word_freq']), json.dumps(article['3-word_freq']), article['hash'])
     )
 
     conn.commit()

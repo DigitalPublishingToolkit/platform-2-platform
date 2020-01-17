@@ -6,6 +6,7 @@ from nltk import ngrams, FreqDist
 from nltk import pos_tag
 import re
 import hashlib
+from slugify import slugify
 
 #-- text-clean-up
 def text_cu(text):
@@ -181,7 +182,7 @@ def process_metadata(input, article, publisher):
              "links": input['links'],
              "refs": input['refs']}
 
-  article['title'] = input['title'].replace('&nbsp', ' ').replace('\n', '')
+  article['title'] = input['title'].replace('&nbsp', ' ').replace('\n', '').strip()
   article['abstract'] = input['abstract'].replace('&nbsp', ' ').replace('\n', '')
 
   authors = []
@@ -207,7 +208,9 @@ def process_metadata(input, article, publisher):
 
   links = [url for url in input['links'] if url.startswith('#') is False]
 
-  article['artid'] = hashlib.sha256(str.encode(article['title'])).hexdigest()
+  article['hash'] = hashlib.sha256(str.encode(article['title'] + article['publisher'])).hexdigest()
+
+  article['slug'] = slugify(article['title'])
 
   article['links'] = links
 

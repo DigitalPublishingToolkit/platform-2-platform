@@ -20,6 +20,7 @@ gensim = "*"
 textsearch = "*"
 flask = "*"
 flask-restful = "*"
+python-slugify = "*"
 
 [requires]
 python_version = "3.7"

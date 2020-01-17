@@ -265,7 +265,7 @@ def main(name, articles):
         article_tokens['2-word_freq'] = article_tk['2-word_freq']
         article_tokens['3-word_freq'] = article_tk['3-word_freq']
         article_tokens['tokens'] = article_tk
-        article_tokens['artid'] = item['artid']
+        article_tokens['hash'] = item['hash']
 
         save_to_db.tokens(article_tokens)
 
