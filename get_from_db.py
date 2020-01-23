@@ -56,8 +56,6 @@ def get_feedback_matches():
     cross_q = cur.fetchall()
     feedback_q = [list(item) for item in cross_q]
 
-    print('FEEDBACK-Q =>', feedback_q)
-
     feedbacks = []
     for match in feedback_q:
       feedback = {'input_slug': match[0],
@@ -68,7 +66,6 @@ def get_feedback_matches():
 
       feedbacks.append(feedback)
 
-    print('FEEDBACKS =>', feedbacks)
     return feedbacks
 
   except (Exception, psycopg2.DatabaseError) as error:
@@ -501,7 +498,7 @@ def get_pub_articles(publisher):
     #-- article matching is based on db article id
     def make_index(index, labels, values):
       for article in values:
-        matches = [x for x in feedbacks if x['input_id'] == article[0]]
+        matches = [x for x in feedbacks if x['input_slug'] == article[0]]
 
         article = list(article)
         article.append(matches)
@@ -518,7 +515,7 @@ def get_pub_articles(publisher):
     return index
 
   except (Exception, psycopg2.DatabaseError) as error:
-    print('db error:', error)
+    print('get-pub-articles => db error:', error)
   finally:
     if conn is not None:
       conn.close()
