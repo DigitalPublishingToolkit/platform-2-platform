@@ -74,7 +74,7 @@ def ask(slug, publisher, labels):
 
   labels = [k for k, v in labels.items()]
 
-  # get full article from article id passed through /Ask POST
+  # get full article from article publisher and slug passed through /Ask POST
   words = get_from_db.get_article_by_pub_slug(publisher, slug, labels)
 
   if bool(words) is False:
@@ -111,7 +111,7 @@ def ask(slug, publisher, labels):
       article = metadata[tag_id]
       print(article['title'], article['publisher'])
 
-      score = get_from_db.get_feedback_match_by_pub_slug(publisher, slug)
+      score = get_from_db.get_feedback_match(publisher, slug)
 
       # add `rate` and `score` to article from metadata
       article['rate'] = rate

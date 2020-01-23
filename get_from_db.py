@@ -44,31 +44,31 @@ def get_feedback_matches():
     cur.execute("""
       SET TIME ZONE 'UTC';
       SELECT
-      metadata.id input_id,
-      metadata.title,
-      feedback.id match_id,
-      feedback.input_title,
-      feedback.match_title,
+      metadata.slug input_slug,
+      feedback.match_slug match_slug,
       feedback.match_publisher,
       feedback.score,
       feedback.timestamp
       FROM metadata
-      INNER JOIN feedback ON metadata.title = feedback.input_title;
+      INNER JOIN feedback ON metadata.slug = feedback.input_slug;
       """)
 
     cross_q = cur.fetchall()
     feedback_q = [list(item) for item in cross_q]
 
+    print('FEEDBACK-Q =>', feedback_q)
+
     feedbacks = []
     for match in feedback_q:
-      feedback = {'input_id': match[0],
-                  'match_title': match[4],
-                  'match_publisher': match[5],
-                  'score': match[6],
-                  'timestamp': match[7].isoformat()}
+      feedback = {'input_slug': match[0],
+                  'match_slug': match[1],
+                  'match_publisher': match[2],
+                  'score': match[3],
+                  'timestamp': match[4].isoformat()}
 
       feedbacks.append(feedback)
 
+    print('FEEDBACKS =>', feedbacks)
     return feedbacks
 
   except (Exception, psycopg2.DatabaseError) as error:
@@ -242,7 +242,7 @@ def get_articles_all_matches():
       conn.close()
       print('db connection closed')
 
-def get_feedback_match_by_pub_slug(pub, slug):
+def get_feedback_match(input_publisher, input_slug):
   conn = None
   try:
     params = config()
@@ -253,9 +253,7 @@ def get_feedback_match_by_pub_slug(pub, slug):
     cur.execute("""
       SET TIME ZONE 'UTC';
       SELECT
-      metadata.publisher input_pub,
       metadata.slug input_slug,
-      feedback.input_slug,
       feedback.match_slug,
       feedback.match_publisher,
       feedback.score,
@@ -263,64 +261,18 @@ def get_feedback_match_by_pub_slug(pub, slug):
       FROM metadata
       INNER JOIN feedback ON metadata.slug = feedback.input_slug
       WHERE metadata.publisher = '%s' AND metadata.slug = '%s';
-      """ % (pub, slug,))
+      """ % (input_publisher, input_slug))
 
     cross_q = cur.fetchall()
     feedback_q = [list(item) for item in cross_q]
 
     feedbacks = []
     for match in feedback_q:
-      feedback = {'input_id': match[0],
-                  'match_title': match[4],
-                  'match_publisher': match[5],
-                  'score': match[6],
-                  'timestamp': match[7].isoformat()}
-
-      feedbacks.append(feedback)
-
-    return feedbacks
-
-  except (Exception, psycopg2.DatabaseError) as error:
-    print('db error:', error)
-  finally:
-    if conn is not None:
-      conn.close()
-      print('db connection closed')
-
-def get_feedback_match(input_id):
-  conn = None
-  try:
-    params = config()
-    print('connecting to db...')
-    conn = psycopg2.connect(**params)
-    cur = conn.cursor()
-
-    cur.execute("""
-      SET TIME ZONE 'UTC';
-      SELECT
-      metadata.id input_id,
-      metadata.title,
-      feedback.id match_id,
-      feedback.input_title,
-      feedback.match_title,
-      feedback.match_publisher,
-      feedback.score,
-      feedback.timestamp
-      FROM metadata
-      INNER JOIN feedback ON metadata.title = feedback.input_title
-      WHERE metadata.id = %s;
-      """ % (input_id,))
-
-    cross_q = cur.fetchall()
-    feedback_q = [list(item) for item in cross_q]
-
-    feedbacks = []
-    for match in feedback_q:
-      feedback = {'input_id': match[0],
-                  'match_title': match[4],
-                  'match_publisher': match[5],
-                  'score': match[6],
-                  'timestamp': match[7].isoformat()}
+      feedback = {'input_slug': match[0],
+                  'match_slug': match[1],
+                  'match_publisher': match[2],
+                  'score': match[3],
+                  'timestamp': match[4].isoformat()}
 
       feedbacks.append(feedback)
 
@@ -817,9 +769,8 @@ def get_article_by_pub_slug(pub, slug, labels):
     if labels is None or not labels:
       labels = get_labels(cur, 'metadata')
     else:
+      labels.append('slug')
       labels = labels
-
-    print('PUB-SLUG', pub, slug, labels)
 
     cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata WHERE publisher = '%s' AND slug = '%s';" % (', '.join(labels), pub, slug))
     article = cur.fetchone()
@@ -829,15 +780,14 @@ def get_article_by_pub_slug(pub, slug, labels):
     items = []
     article = make_article(items, labels, article)
 
-    #-- article matching is based on db article id
-    #-- CHANGE THIS TO USE article['hash'] / ['slug']
-    matches = [x for x in feedbacks if x['input_id'] == article['id']]
+    #-- article matching is based on db article['slug']
+    matches = [x for x in feedbacks if x['input_slug'] == article['slug']]
     article['matches'] = matches
 
     return article
 
   except (Exception, psycopg2.DatabaseError) as error:
-    print('db error:', error)
+    print('get_article_by_pub_slug => db error:', error)
   finally:
     if conn is not None:
       conn.close()
