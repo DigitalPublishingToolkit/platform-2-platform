@@ -64,9 +64,8 @@ class Articles_All_Matched(Resource):
 
 class Ask(Resource):
   # js object = {
-  #   article_title: '',
+  #   article_slug: '',
   #   article_publisher: '',
-  #   article_id: integer,
   #   tokens: {
   #     title: Boolean,
   #     author: Boolean,
