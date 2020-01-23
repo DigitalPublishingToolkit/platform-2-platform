@@ -161,10 +161,10 @@ def feedback(feedback):
 
     cur.execute(
         """
-        INSERT INTO feedback (input_title, input_publisher, match_title, match_publisher, score, timestamp)
+        INSERT INTO feedback (input_slug, input_publisher, match_slug, match_publisher, score, timestamp)
         VALUES (%s, %s, %s, %s, %s, %s);
         """,
-        (feedback['input_title'], feedback['input_publisher'], feedback['match_title'], feedback['match_publisher'], feedback['score'], feedback['timestamp'])
+        (feedback['input_slug'], feedback['input_publisher'], feedback['match_slug'], feedback['match_publisher'], feedback['score'], feedback['timestamp'])
     )
 
     conn.commit()

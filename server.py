@@ -87,9 +87,9 @@ class Ask(Resource):
 
 class Send(Resource):
   # js object = {
-  #   inputs_title: '',
+  #   inputs_slug: '',
   #   inputs_publisher: '',
-  #   match_title: '',
+  #   match_slug: '',
   #   match_publisher: '',
   #   score: integer,
   #   timestamp: new Date().toISOString()
@@ -97,9 +97,9 @@ class Send(Resource):
 
   def post(self):
     parser = reqparse.RequestParser()
-    parser.add_argument('input_title', type=str)
+    parser.add_argument('input_slug', type=str)
     parser.add_argument('input_publisher', type=str)
-    parser.add_argument('match_title', type=str)
+    parser.add_argument('match_slug', type=str)
     parser.add_argument('match_publisher', type=str)
     parser.add_argument('score', type=inputs.natural)
     parser.add_argument('timestamp', type=inputs.datetime_from_iso8601)
