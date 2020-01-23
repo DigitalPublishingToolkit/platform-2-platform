@@ -80,7 +80,6 @@ class Ask(Resource):
     parser.add_argument('article_publisher', type=str)
     parser.add_argument('tokens', type=dict)
     data = parser.parse_args()
-    # result = ask.ask(data.article_title, data.article_publisher, data.article_id, data.tokens)
     result = ask.ask(data.article_slug, data.article_publisher, data.tokens)
     return result
 
