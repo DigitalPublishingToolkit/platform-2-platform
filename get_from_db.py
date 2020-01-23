@@ -242,6 +242,51 @@ def get_articles_all_matches():
       conn.close()
       print('db connection closed')
 
+def get_feedback_match_by_pub_slug(pub, slug):
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    cur.execute("""
+      SET TIME ZONE 'UTC';
+      SELECT
+      metadata.publisher input_pub,
+      metadata.slug input_slug,
+      feedback.input_slug,
+      feedback.match_slug,
+      feedback.match_publisher,
+      feedback.score,
+      feedback.timestamp
+      FROM metadata
+      INNER JOIN feedback ON metadata.slug = feedback.input_slug
+      WHERE metadata.publisher = '%s' AND metadata.slug = '%s';
+      """ % (pub, slug,))
+
+    cross_q = cur.fetchall()
+    feedback_q = [list(item) for item in cross_q]
+
+    feedbacks = []
+    for match in feedback_q:
+      feedback = {'input_id': match[0],
+                  'match_title': match[4],
+                  'match_publisher': match[5],
+                  'score': match[6],
+                  'timestamp': match[7].isoformat()}
+
+      feedbacks.append(feedback)
+
+    return feedbacks
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
 def get_feedback_match(input_id):
   conn = None
   try:
@@ -644,7 +689,7 @@ def get_metadata_for_pub(publisher):
       conn.close()
       print('db connection closed')
 
-def get_metadata_from_artid(publisher, artids):
+def get_metadata_from_hash(publisher, hashes):
   conn = None
   try:
     params = config()
@@ -661,7 +706,7 @@ def get_metadata_from_artid(publisher, artids):
 
     labels = get_labels(cur, 'metadata')
 
-    cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT %s FROM metadata WHERE artid IN %s;" % (', '.join(labels), artids))
+    cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT %s FROM metadata WHERE hash IN %s;" % (', '.join(labels), hashes))
     values = cur.fetchall()
 
     cur.close()
@@ -673,7 +718,7 @@ def get_metadata_from_artid(publisher, artids):
     for article in values:
       items = []
       article = make_article(items, labels, article)
-      index[article['artid']] = article
+      index[article['hash']] = article
 
     return index
 
@@ -760,7 +805,7 @@ def get_specific_article(article_id, labels):
       print('db connection closed')
 
 #-- get specific article by publisher (<pub>/<slug>)
-def get_article_by_pub_slug(pub, slug):
+def get_article_by_pub_slug(pub, slug, labels):
   conn = None
   try:
     params = config()
@@ -769,7 +814,12 @@ def get_article_by_pub_slug(pub, slug):
     cur = conn.cursor()
 
     #-- labels
-    labels = get_labels(cur, 'metadata')
+    if labels is None or not labels:
+      labels = get_labels(cur, 'metadata')
+    else:
+      labels = labels
+
+    print('PUB-SLUG', pub, slug, labels)
 
     cur.execute("SET TIME ZONE 'UTC'; SELECT %s FROM metadata WHERE publisher = '%s' AND slug = '%s';" % (', '.join(labels), pub, slug))
     article = cur.fetchone()
@@ -780,6 +830,7 @@ def get_article_by_pub_slug(pub, slug):
     article = make_article(items, labels, article)
 
     #-- article matching is based on db article id
+    #-- CHANGE THIS TO USE article['hash'] / ['slug']
     matches = [x for x in feedbacks if x['input_id'] == article['id']]
     article['matches'] = matches
 
@@ -816,7 +867,6 @@ def get_article_by_slug(article_slug, labels):
 
     items = []
     article = make_article(items, labels, article)
-
 
     #-- article matching is based on db article id
     matches = [x for x in feedbacks if x['input_id'] == article['id']]
@@ -858,9 +908,8 @@ def get_corpus(publisher, **labels):
     labels_body = list(labels.keys())
     labels_body = ["token_{0}".format(item) for item in labels_body]
 
-    # add `artid` field to be able to map later on in `ask.py` what's the article to query from db.metadata
-    labels_head = ['artid']
-
+    # add `hash` field to be able to map later on in `ask.py` what's the article to query from db.metadata
+    labels_head = ['hash']
     labels = labels_head + labels_body
 
     cur.execute("SELECT %s FROM tokens WHERE publisher IN %s;" % (",".join(labels), pubs))
@@ -871,11 +920,11 @@ def get_corpus(publisher, **labels):
     for item in values:
       tks = []
       for i in range(1, 4):
-        tks.append(item[i])
+        for unit in item[i]:
+          tks.append(unit)
 
-      article = {'artid': item[0],
-                 'tokens': tks
-                 }
+      article = {'hash': item[0],
+                 'tokens': tks}
       tokens.append(article)
 
     results = {'index': index,
@@ -884,7 +933,7 @@ def get_corpus(publisher, **labels):
     return results
 
   except (Exception, psycopg2.DatabaseError) as error:
-    print('db error:', error)
+    print('get_corpus => db error:', error)
   finally:
     if conn is not None:
       conn.close()

@@ -29,7 +29,7 @@ class Articles_Publisher_WF(Resource):
 
 class Article_Publisher(Resource):
   def get(self, pub, slug):
-    article = get_from_db.get_article_by_pub_slug(pub, slug)
+    article = get_from_db.get_article_by_pub_slug(pub, slug, [])
     return article
 
 class Article(Resource):
@@ -77,12 +77,12 @@ class Ask(Resource):
 
   def post(self):
     parser = reqparse.RequestParser()
-    parser.add_argument('article_title', type=str)
+    parser.add_argument('article_slug', type=str)
     parser.add_argument('article_publisher', type=str)
-    parser.add_argument('article_id', type=inputs.natural)
     parser.add_argument('tokens', type=dict)
     data = parser.parse_args()
-    result = ask.ask(data.article_title, data.article_publisher, data.article_id, data.tokens)
+    # result = ask.ask(data.article_title, data.article_publisher, data.article_id, data.tokens)
+    result = ask.ask(data.article_slug, data.article_publisher, data.tokens)
     return result
 
 

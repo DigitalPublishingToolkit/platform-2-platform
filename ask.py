@@ -1,3 +1,4 @@
+from os import path
 import get_from_db
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 import text_processing
@@ -44,23 +45,24 @@ def get_article_vocab(tokens, model):
 
 #--- main func
 
-def ask(title, publisher, article_id, labels):
+def ask(slug, publisher, labels):
   # -- get corpuses from all pubs except the one passed as `arg`
   input_corpus = get_from_db.get_corpus(publisher, **labels)
 
   #-- instead of adding indexical numbers to the tag section of the `TaggedDocument` (it's a tuple: `Taggeddocument(docs, tags)`),
-  # let's add the article['artid'] for later cross retrieval when having to make the final list of similar articles by pulling from db.metadata
-  documents = [TaggedDocument(doc['tokens'], [doc['artid']]) for i, doc in enumerate(input_corpus['data'])]
-  # print('DOCUMENTS', documents)
+  # let's add the article['hash'] for later cross retrieval when having to make the final list of similar articles by pulling from db.metadata
+  documents = [TaggedDocument(doc['tokens'], [doc['hash']]) for i, doc in enumerate(input_corpus['data'])]
+
+  # print(documents)
 
   #-- get list of pubs except the one passed as `arg` to ask()
   fn_model = get_pubs(publisher)
 
   #-- check if having to build new model again by loading model saved to disk, if it fails build model anew and train it first
-  try:
+  if path.exists(fn_model):
     model = Doc2Vec.load(fn_model)
-  except Exception as e:
-    print('model could not be loaded', e)
+  else:
+    print('model could not be loaded')
     model = model_setup(documents, fn_model)
 
   #-- convert labels dict to list, pass it to `get_specific_article`
@@ -73,10 +75,10 @@ def ask(title, publisher, article_id, labels):
   labels = [k for k, v in labels.items()]
 
   # get full article from article id passed through /Ask POST
-  words = get_from_db.get_specific_article(article_id, labels)
+  words = get_from_db.get_article_by_pub_slug(publisher, slug, labels)
 
   if bool(words) is False:
-    return {'error': 'article with id %s not found' % article_id}
+    return {'error': 'article with slug %s not found' % slug}
   else:
     text_processing.vector_tokenize(words, article)
     vector_l = [item for item in article.values()]
@@ -98,19 +100,18 @@ def ask(title, publisher, article_id, labels):
   # print('SIMS', sims)
 
   # -- get article metadata from all pubs except the one passed as `arg`
-  artids = tuple([item['artid'] for item in input_corpus['data']])
-  metadata = get_from_db.get_metadata_from_artid(publisher, artids)
-  # print('METADATA', metadata)
+  hashes = tuple([item['hash'] for item in input_corpus['data']])
+  metadata = get_from_db.get_metadata_from_hash(publisher, hashes)
 
   results = []
-  #-- iterate over SIMS and use tag_id (`artid`) to pick the corresponding full article from the metadata list of articles
+  #-- iterate over SIMS and use tag_id (`hash`) to pick the corresponding full article from the metadata list of articles
   for index, (tag_id, rate) in enumerate(sims):
     if (rate >= 0.1):
       print('INDEX, TAG_ID, RATE', index, tag_id, rate)
       article = metadata[tag_id]
       print(article['title'], article['publisher'])
 
-      score = get_from_db.get_feedback_match(article_id)
+      score = get_from_db.get_feedback_match_by_pub_slug(publisher, slug)
 
       # add `rate` and `score` to article from metadata
       article['rate'] = rate
