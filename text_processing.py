@@ -208,9 +208,8 @@ def process_metadata(input, article, publisher):
 
   links = [url for url in input['links'] if url.startswith('#') is False]
 
-  article['hash'] = hashlib.sha256(str.encode(article['title'] + article['publisher'])).hexdigest()
-
   article['slug'] = slugify(article['title'])
+  article['hash'] = hashlib.sha256(str.encode(article['slug'] + article['publisher'])).hexdigest()
 
   article['links'] = links
 
