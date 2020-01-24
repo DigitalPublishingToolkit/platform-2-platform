@@ -71,7 +71,8 @@ class Ask(Resource):
   #     author: Boolean,
   #     tags: Boolean,
   #     body: Boolean
-  #   }
+  #   },
+  #   size: integer
   # }
 
   def post(self):
@@ -79,8 +80,9 @@ class Ask(Resource):
     parser.add_argument('article_slug', type=str)
     parser.add_argument('article_publisher', type=str)
     parser.add_argument('tokens', type=dict)
+    parser.add_argument('size', type=inputs.natural)
     data = parser.parse_args()
-    result = ask.ask(data.article_slug, data.article_publisher, data.tokens)
+    result = ask.ask(data.article_slug, data.article_publisher, data.tokens, data.size)
     return result
 
 

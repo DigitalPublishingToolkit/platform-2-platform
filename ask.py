@@ -45,7 +45,7 @@ def get_article_vocab(tokens, model):
 
 #--- main func
 
-def ask(slug, publisher, labels):
+def ask(slug, publisher, labels, size):
   # -- get corpuses from all pubs except the one passed as `arg`
   input_corpus = get_from_db.get_corpus(publisher, **labels)
 
@@ -96,7 +96,7 @@ def ask(slug, publisher, labels):
 
   #-- we get our most-similar results as documents, we set `topn` to return the n of results we want to have
   # sims = model.docvecs.most_similar([inferred_vector], topn=len(documents))
-  sims = model.docvecs.most_similar([inferred_vector], topn=100)
+  sims = model.docvecs.most_similar([inferred_vector], topn=size)
   # print('SIMS', sims)
 
   # -- get article metadata from all pubs except the one passed as `arg`
