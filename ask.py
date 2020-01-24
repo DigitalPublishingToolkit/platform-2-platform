@@ -109,7 +109,7 @@ def ask(slug, publisher, labels):
     if (rate >= 0.1):
       print('INDEX, TAG_ID, RATE', index, tag_id, rate)
       article = metadata[tag_id]
-      print(article['title'], article['publisher'])
+      # print(article['title'], article['publisher'])
 
       score = get_from_db.get_feedback_match(publisher, slug)
 
