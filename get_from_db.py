@@ -63,7 +63,6 @@ def get_feedback_matches():
                   'match_publisher': match[2],
                   'score': match[3],
                   'timestamp': match[4].isoformat()}
-
       feedbacks.append(feedback)
 
     return feedbacks

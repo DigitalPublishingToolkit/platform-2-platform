@@ -82,9 +82,10 @@ class Ask(Resource):
     parser.add_argument('tokens', type=dict)
     parser.add_argument('size', type=inputs.natural)
     data = parser.parse_args()
-    result = ask.ask(data.article_slug, data.article_publisher, data.tokens, data.size)
-    return result
 
+    result = ask.ask(data.article_slug, data.article_publisher, data.tokens, data.size)
+
+    return result
 
 class Send(Resource):
   # js object = {
