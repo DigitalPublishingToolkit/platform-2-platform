@@ -498,7 +498,7 @@ def get_pub_articles(publisher):
     #-- article matching is based on db article id
     def make_index(index, labels, values):
       for article in values:
-        matches = [x for x in feedbacks if x['input_slug'] == article[0]]
+        matches = [x for x in feedbacks if x['input_slug'] == article[-1]]
 
         article = list(article)
         article.append(matches)
