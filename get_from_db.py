@@ -82,90 +82,32 @@ def get_publisher_matched(publisher):
     conn = psycopg2.connect(**params)
     cur = conn.cursor()
 
-    def get_articles_matched(field, publisher):
+    def get_articles_matched(field_slug, field_pub, publisher):
       cur.execute("""
         SET TIME ZONE 'UTC';
         SELECT
-        metadata.id input_id,
-        metadata.title,
         metadata.url,
-        feedback.id match_id,
-        feedback.input_title,
-        feedback.input_publisher,
-        feedback.match_title,
-        feedback.match_publisher
+        feedback.%s,
+        feedback.%s
         FROM metadata INNER JOIN feedback
-        ON metadata.title = feedback.%s AND feedback.input_publisher = '%s';
-        """ % (field, publisher,))
+        ON metadata.slug = feedback.%s AND feedback.%s = '%s';
+        """ % (field_slug, field_pub, field_slug, field_pub, publisher,))
 
-      cross_q = cur.fetchall()
-      articles = [list(item) for item in cross_q]
+      return cur.fetchall()
 
-      index = []
-      for item in articles:
-        article = {'title': item[4],
-                   'url': item[2],
-                   'publisher': item[5]}
-
-        index.append(article)
-
-      return index
-
-    try:
-      articles = get_articles_matched('input_title', publisher)
-      return articles
-    except Exception as e:
-      print('feedback.input_title != metadata.title', e)
-
-      articles = get_articles_matched('match_title', publisher)
-      return articles
-
-  except (Exception, psycopg2.DatabaseError) as error:
-    print('db error:', error)
-  finally:
-    if conn is not None:
-      conn.close()
-      print('db connection closed')
-
-def get_match_progress():
-  conn = None
-  try:
-    params = config()
-    print('connecting to db...')
-    conn = psycopg2.connect(**params)
-    cur = conn.cursor()
-
-    #-- get list of publishers and take out the one passed
-    cur.execute("SELECT DISTINCT publisher FROM metadata")
-    pubs = cur.fetchall()
-    pubs = get_flat_list(pubs)
+    articles_input = get_articles_matched('input_slug', 'input_publisher', publisher)
+    articles_match = get_articles_matched('match_slug', 'match_publisher', publisher)
+    articles = articles_input + articles_match
+    matched = set(articles)
+    print('matched', matched)
 
     index = []
-    for publisher in pubs:
-      #-- get publisher's total number of articles
-      cur.execute("SET TIME ZONE 'UTC'; SELECT COUNT(*) FROM metadata WHERE publisher = '%s';" % (publisher,))
-      total = cur.fetchone()[0]
+    for item in matched:
+      article = {'url': item[0],
+                 'slug': item[1],
+                 'publisher': item[2]}
 
-      def get_pub_titles(field_title, field_pub, pub):
-        cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT %s FROM feedback WHERE %s = '%s';" % (field_title, field_pub, pub,))
-        articles = cur.fetchall()
-        return [i[0] for i in articles if i[0] != '']
-
-      input_articles = get_pub_titles('input_title', 'input_publisher', publisher)
-      match_articles = get_pub_titles('match_title', 'match_publisher', publisher)
-
-      articles = input_articles + match_articles
-      print(articles)
-      print(set(articles))
-
-      matched = len(set(articles))
-
-      # -- make dict
-      entry = {'publisher': publisher,
-               'total': total,
-               'matched': matched}
-
-      index.append(entry)
+      index.append(article)
 
     return index
 
@@ -184,19 +126,22 @@ def get_publisher_unmatched(publisher):
     conn = psycopg2.connect(**params)
     cur = conn.cursor()
 
-    cur.execute("SET TIME ZONE 'UTC'; SELECT title,url,publisher FROM metadata WHERE publisher = '%s'" % (publisher,))
+    cur.execute("SET TIME ZONE 'UTC'; SELECT slug,url,publisher FROM metadata WHERE publisher = '%s'" % (publisher,))
 
     values = cur.fetchall()
     articles = []
-    make_index(articles, ['title', 'url', 'publisher'], values)
+    make_index(articles, ['slug', 'url', 'publisher'], values)
 
     articles_matched = get_publisher_matched(publisher)
+    print('ARTICLES_MATCHED', articles_matched, len(articles_matched))
 
     # convert list of dictionaries to set of dictionaries, <https://stackoverflow.com/a/39204359>
     articles_set = set(json.dumps(item, sort_keys=True) for item in articles)
     articles_matched_set = set(json.dumps(item, sort_keys=True) for item in articles_matched)
+    print('ARTICLES_MATCHED_SET', articles_matched_set, len(articles_matched_set))
 
     articles_diff = articles_set.difference(articles_matched_set)
+    print('ARTICLES_DIFF', articles_diff)
     # convert set of dictionaries to list of dictionaries by using `json.loads`
     articles_unmatched = list(json.loads(item) for item in articles_diff)
 
@@ -224,6 +169,8 @@ def get_articles_all_matches():
 
     articles = []
     make_index(articles, labels, values)
+
+    print('ALL MATCHES', articles)
 
     if not articles or articles is None:
       articles = [{'message': 'no matches yet'}]
@@ -273,6 +220,52 @@ def get_feedback_match(input_publisher, input_slug):
       feedbacks.append(feedback)
 
     return feedbacks
+
+  except (Exception, psycopg2.DatabaseError) as error:
+    print('db error:', error)
+  finally:
+    if conn is not None:
+      conn.close()
+      print('db connection closed')
+
+def get_match_progress():
+  conn = None
+  try:
+    params = config()
+    print('connecting to db...')
+    conn = psycopg2.connect(**params)
+    cur = conn.cursor()
+
+    #-- get list of publishers and take out the one passed
+    cur.execute("SELECT DISTINCT publisher FROM metadata")
+    pubs = cur.fetchall()
+    pubs = get_flat_list(pubs)
+
+    index = []
+    for publisher in pubs:
+      #-- get publisher's total number of articles
+      cur.execute("SET TIME ZONE 'UTC'; SELECT COUNT(*) FROM metadata WHERE publisher = '%s';" % (publisher,))
+      total = cur.fetchone()[0]
+
+      def get_pub_slugs(field_slug, field_pub, pub):
+        cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT %s FROM feedback WHERE %s = '%s';" % (field_slug, field_pub, pub,))
+        articles = cur.fetchall()
+        return articles
+
+      input_articles = get_pub_slugs('input_slug', 'input_publisher', publisher)
+      match_articles = get_pub_slugs('match_slug', 'match_publisher', publisher)
+
+      articles = input_articles + match_articles
+      matched = len(set(articles))
+
+      # -- make dict
+      entry = {'publisher': publisher,
+               'total': total,
+               'matched': matched}
+
+      index.append(entry)
+
+    return index
 
   except (Exception, psycopg2.DatabaseError) as error:
     print('db error:', error)
