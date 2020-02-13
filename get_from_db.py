@@ -2,6 +2,7 @@ import psycopg2
 from psycopg2.extras import register_composite
 from config import config
 import json
+from collections import Counter, OrderedDict
 
 #-- utils
 
@@ -241,29 +242,79 @@ def get_match_progress():
     pubs = cur.fetchall()
     pubs = get_flat_list(pubs)
 
-    index = []
+    index = {}
+
+    # get score average value across all matched articles
+    cur.execute("SET TIME ZONE 'UTC'; SELECT AVG(score) FROM feedback;")
+    score = cur.fetchone()[0]
+    index['score (average)'] = float(score)
+
+    #-- get all tags from across all matched articles
+    # fetch all slugs from the matches
+    cur.execute("SET TIME ZONE 'UTC'; SELECT input_slug, match_slug FROM feedback;")
+    articles_t = cur.fetchall()
+    articles_t = get_flat_list(articles_t)
+
+    # loop over slugs and fetch tags from each article
+    tags = Counter()
+    for slug in articles_t:
+      cur.execute("SET TIME ZONE 'UTC'; SELECT tags FROM metadata WHERE slug = '%s';" % (slug))
+      r = cur.fetchall()
+      for item in r:
+        for t in item[0]:
+          tags[t] += 1
+
+    index['tags'] = OrderedDict(tags.most_common())
+
+    def get_pub_slugs(field_slug, field_pub, pub):
+      cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT %s FROM feedback WHERE %s = '%s';" % (field_slug, field_pub, pub,))
+      articles = cur.fetchall()
+      return articles
+
+    #-- get percentages of pub matching
+    def get_pub_to_pub_matching(input_pub, match_pub):
+      cur.execute("SET TIME ZONE 'UTC'; SELECT count(*) FROM feedback WHERE input_publisher = '%s' AND match_publisher = '%s';" % (input_pub, match_pub))
+      r_input = cur.fetchone()[0]
+
+      cur.execute("SET TIME ZONE 'UTC'; SELECT count(*) FROM feedback WHERE input_publisher = '%s' AND match_publisher = '%s';" % (match_pub, input_pub))
+      r_match = cur.fetchone()[0]
+
+      result = r_input + r_match
+      return result
+
+    pub_index = []
     for publisher in pubs:
       #-- get publisher's total number of articles
       cur.execute("SET TIME ZONE 'UTC'; SELECT COUNT(*) FROM metadata WHERE publisher = '%s';" % (publisher,))
       total = cur.fetchone()[0]
-
-      def get_pub_slugs(field_slug, field_pub, pub):
-        cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT %s FROM feedback WHERE %s = '%s';" % (field_slug, field_pub, pub,))
-        articles = cur.fetchall()
-        return articles
 
       input_articles = get_pub_slugs('input_slug', 'input_publisher', publisher)
       match_articles = get_pub_slugs('match_slug', 'match_publisher', publisher)
 
       articles = input_articles + match_articles
       matched = len(set(articles))
+      done = matched * 100 / total
+
+      diff = [p for p in pubs if p != publisher]
+
+      pub2pub_match = {}
+      for p in diff:
+        r = get_pub_to_pub_matching(publisher, p)
+        pub2pub_match[p] = r
 
       # -- make dict
       entry = {'publisher': publisher,
                'total': total,
-               'matched': matched}
+               'matched': matched,
+               'done': done,
+               'pub2pub-matching': pub2pub_match}
 
-      index.append(entry)
+      pub_index.append(entry)
+
+    index['publishers'] = pub_index
+
+    # which publishers overlapped the most with whom
+    # add to index as root item 
 
     return index
 
