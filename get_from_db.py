@@ -251,7 +251,7 @@ def get_match_progress():
 
     #-- get all tags from across all matched articles
     # fetch all slugs from the matches
-    cur.execute("SET TIME ZONE 'UTC'; SELECT input_slug, match_slug FROM feedback;")
+    cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT input_slug, match_slug FROM feedback;")
     articles_t = cur.fetchall()
     articles_t = get_flat_list(articles_t)
 
