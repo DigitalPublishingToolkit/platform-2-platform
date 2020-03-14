@@ -23,11 +23,11 @@ This tool was developed as part of the [Making Public!](https://networkcultures.
 
 First, obligatory disclosure:
 
-We’re using [pyenv](https://github.com/pyenv/pyenv) and [pipenv](https://github.com/pypa/pipenv) to manage the insanely complicated process of running a specific version of python without messing every other python version installed in your system, as well as for managing python packages and therefore dealing with virtual environments.
+We’re using [pyenv](https://github.com/pyenv/pyenv) and [pipenv](https://github.com/pypa/pipenv) to manage the insanely complicated process of running a specific version of python without messing every other python version installed in the system, as well as for managing python packages and therefore dealing with virtual environments.
 
 There are other ways to do this, feel free to use your preferred method. For example using `venv` to manage python virtual environment (we do that with `pipenv shell`) and simply using `pip` and `pip freeze > requirements.txt` for tracking package versions.
 
-To keep following this guide, either install `pyenv` and `pipenv` or swap these two commands with your own appropriate version.
+To keep following this guide, either install `pyenv` and `pipenv` or swap these two commands with your own preferred version.
 
 ### Python environment
 
@@ -67,14 +67,14 @@ Check this as general [reference guide](https://www.codementor.io/@engineerapart
 
 - check it is running with `sudo service postgresql status`
 - for now postgresql has created a `postgres` user,
-- if you try connecting to postgres with `psql postgres` it will say `<user>` has no *role* in postgres yet
+- if you try to connect to postgres with `psql postgres`, it will say `<user>` has no *role* in postgres yet
 - therefore connect to it with the default `postgres` user, by doing `sudo -u postgres -i`
 - then do `psql postgres` to enter postgres
 - `\du;` to see the list of users
-- create a new user `CREATE ROLE <user> WITH LOGIN PASSWORD '<password>';` (tip: use the same username as an existing unix user present in your machine; this will let you to access the PostgreSQL database shell without having to specify a user to login)
-- make them create databases by changing their role attributes `ALTER ROLE <user> CREATEDB;`
+- create a new user `CREATE ROLE <user> WITH LOGIN PASSWORD '<password>';` (tip: use the same username as an existing unix user present in your machine; this will let you access the PostgreSQL database shell without having to specify a user to login)
+- allow this user to create databases by changing their role attributes `ALTER ROLE <user> CREATEDB;`
 - log out from psql with `\q` (switching to your default user and trying to connect results in a login error)
-- before connecting as a non-super user, create a db for your user, by simply doing `createdb <username>`; this will create a database for psql with the name of your username, psql needs this
+- before connecting as a non-super user, create a db for your user, by simply doing `createdb <username>`; this will create a database for psql with the name of your username, *psql needs this*
 - connect to psql again with your new user, by doing `psql -U <user> -h localhost`, type the password when asked; you should be in now!
 - create a new db with the logged in user (which is not root / superuser), `CREATE DATABASE <db-name>;`
 - grant access to your user `GRANT ALL PRIVILEGES ON DATABASE <db-name> TO <user>;`
@@ -88,7 +88,7 @@ After this, make the below tables by entering `psql` with:
 $ psql -U <username> <db-name>
 ```
 
-and then copy pasting each `CREATE TABLE` command listed below and press enter (multiline pasting did work in my tests on different terminals)
+and then copy paste each `CREATE TABLE` command listed below and press enter (multiline pasting did work in my tests on different terminals)
 
 #### scraper
 
@@ -125,7 +125,8 @@ CREATE TABLE metadata (
   images text[],
   links text[],
   refs text[],
-  artid text
+  hash text,
+  slug text
 );
 ```
 
@@ -155,7 +156,7 @@ CREATE TABLE tokens (
   word_freq word_freq[],
   three_word_freq json,
   two_word_freq json,
-  artid text
+  hash text
 );
 ```
 
@@ -169,7 +170,9 @@ CREATE TABLE feedback (
   match_title text NOT NULL,
   match_publisher text NOT NULL,
   score smallint NOT NULL,
-  timestamp timestamptz
+  timestamp timestamptz,
+  input_slug text NOT NULL,
+  match_slug text NOT NULL
 );
 ```
 
@@ -220,16 +223,16 @@ To break the `curl` command down:
 
 - `-H "content-type: application/json"`, send a JSON Header
 - `-d '{
-    "article_title": "The New Euro-Citizen", 
+    "article_slug": "the-new-euro-citizen", 
     "article_publisher": "online-open", 
-    "article_id": 839, 
+    "article_id": 839,
     "tokens": {
       "title": true,
       "author": true,
       "tags": true,
       "body": true
       } 
-  }'` with a data object containing `article_title`, `article_id` and `tokens` type; the data for these three fields can be retrieved from the text-processed data saved in the database, as well as when running the server from the JSON Rest API, by browsing to a publisher page and pick an article from the (eg `http://127.0.0.1:5000/api/articles/amateur-cities`).
+  }'` with a data object containing `article_slug`, `article_publisher`, `article_id` and `tokens` type; the data for these three fields can be retrieved from the text-processed data saved in the database, as well as when running the server from the JSON Rest API (browse to a publisher page and pick an article eg `http://127.0.0.1:5000/api/articles/amateur-cities`).
 
 This call will return an array list of articles, containing all the matches found by the suggestion algorithm.
 
@@ -245,7 +248,7 @@ AttributeError: 'Doc2Vec' object has no attribute 'syn0'
 AttributeError: 'Doc2Vec' object has no attribute 'syn1'
 ```
 
-Both have been reported already as issues to the gensim github page [#1](https://github.com/RaRe-Technologies/gensim/issues/785) and [#2](https://github.com/RaRe-Technologies/gensim/issues/483). It turned out that there seems to be some problem when `Doc2Vec` needs to generate for the first time the model for each new publisher. Somehow it cannot do it and something goes wrong. By copying over the generated models from our macOS environment, the program could work fine.
+Both have been reported already as issues to the gensim github page ([#1](https://github.com/RaRe-Technologies/gensim/issues/785) and [#2](https://github.com/RaRe-Technologies/gensim/issues/483)). It turned out that there seems to be some problem when `Doc2Vec` needs to generate for the first time the model for each new publisher. Somehow it cannot do it and something goes wrong. By copying over the generated models from our macOS environment, the program could work fine.
 
 This is something to fix before moving this program into a reproducible environment (eg Docker or NixOS).
 
@@ -253,4 +256,4 @@ This is something to fix before moving this program into a reproducible environm
 
 Currently we disabled the option to selectively choose which article fields to use when feeding the algorithm for suggesting new articles. Eg, which content is being used as input data to produce matches. 
 
-This is because results did not change at all, and our impression so far is that it’s because our dataset is very small (~ 600 articles) and `Doc2Vec` was built to work with thousands of articles (eg average of 50-70 thousands). We’re still working on this and tweaking options in order to see if result would change. Nonetheless, we keep it this option part of the code (both here and in the frontend app) as it would a very interesting element to play with for the publishers during their editorial review matching-process.
+This is because results did not change at all, and our impression so far is that it’s because our dataset is very small (~ 600 articles) and `Doc2Vec` was built to work with thousands of articles (eg average of 50-70 thousands). We’re still working on this and tweaking options in order to see if result would change. Nonetheless, we keep this option part of the code (both here and in the frontend app) as it would be a very interesting element to play with for the publishers during their editorial review matching-process.
