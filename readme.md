@@ -236,6 +236,19 @@ To break the `curl` command down:
 
 This call will return an array list of articles, containing all the matches found by the suggestion algorithm.
 
+## Javascript embedded plugin
+
+As of `<2020-03-14>`, we mocked up the javascript plugin to embed in each publisher’s website.
+
+This script allows to send the current article on view to the article recommendation algorithm, and send back a list of x articles to display on the article webpage. The list of suggested articles are dinamically inserted into the webpage at the bottom of each article’s text.
+
+So far, we have a working sketched out prototype, and aim to turn that into a packaged script that each of the publishers can simply embed to their website by adding a link to the script.
+
+Due to the nature of each publisher having different article DOM structures, the script takes this into account for a few operations. Ideally, this could be avoided by generalizing the plugin code and ask each publishers’ website to add a few extra lines of code around the plugin, so to provide the correct arguments to the main plugin function.
+
+The prototype version of this code can be found here <https://github.com/afincato/mhp-fem>.
+
+
 ## Known bugs and limitations
 
 ### Bugs
