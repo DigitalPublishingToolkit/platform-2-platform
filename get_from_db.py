@@ -3,6 +3,7 @@ from psycopg2.extras import register_composite
 from config import config
 import json
 from collections import Counter, OrderedDict
+import save_to_json
 
 #-- utils
 
@@ -271,16 +272,17 @@ def get_match_progress():
       articles = cur.fetchall()
       return articles
 
-    #-- get percentages of pub matching
+    #-- get number of pub matching
     def get_pub_to_pub_matching(input_pub, match_pub):
-      cur.execute("SET TIME ZONE 'UTC'; SELECT count(*) FROM feedback WHERE input_publisher = '%s' AND match_publisher = '%s';" % (input_pub, match_pub))
-      r_input = cur.fetchone()[0]
+      cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT input_slug FROM feedback WHERE input_publisher = '%s' AND match_publisher = '%s';" % (input_pub, match_pub))
+      r_input = cur.fetchall()
 
-      cur.execute("SET TIME ZONE 'UTC'; SELECT count(*) FROM feedback WHERE input_publisher = '%s' AND match_publisher = '%s';" % (match_pub, input_pub))
-      r_match = cur.fetchone()[0]
+      cur.execute("SET TIME ZONE 'UTC'; SELECT DISTINCT match_slug FROM feedback WHERE input_publisher = '%s' AND match_publisher = '%s';" % (match_pub, input_pub))
+      r_match = cur.fetchall()
 
-      result = r_input + r_match
-      return result
+      articles = r_input + r_match
+      results = len(set(articles))
+      return results
 
     pub_index = []
     for publisher in pubs:
@@ -612,7 +614,11 @@ def get_pub_articles_word_freq(publisher):
 
       index.append(article)
 
-    return index
+    # write index to disk as to avoid to let `online-open` to crash the server
+    if (publisher == 'online-open'):
+      save_to_json.dump('online-open-wf', index)
+    else:
+      return index
 
   except (Exception, psycopg2.DatabaseError) as error:
     print('db error:', error)
