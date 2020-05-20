@@ -77,6 +77,8 @@ def ask(slug, publisher, labels, size):
   # get full article from article publisher and slug passed through /Ask POST
   words = get_from_db.get_article_by_pub_slug(publisher, slug, labels)
 
+  print('WORDS', words)
+
   if bool(words) is False:
     return {'error': 'article with slug %s not found' % slug}
   else:
@@ -90,7 +92,7 @@ def ask(slug, publisher, labels, size):
     for item in sublist:
       vector.append(item)
 
-  # print('VECTOR', vector)
+  print('VECTOR', vector)
   inferred_vector = model.infer_vector(vector)
   # print('INFERRED_VECTOR', inferred_vector)
 
