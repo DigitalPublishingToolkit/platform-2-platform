@@ -21,6 +21,7 @@ flask = "*"
 flask-restful = "*"
 python-slugify = "*"
 gensim = "*"
+gunicorn = "*"
 
 [requires]
 python_version = "3.7"
