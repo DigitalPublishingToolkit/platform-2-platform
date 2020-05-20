@@ -74,7 +74,7 @@ Check this as general [reference guide](https://www.codementor.io/@engineerapart
 - create a new user `CREATE ROLE <user> WITH LOGIN PASSWORD '<password>';` (tip: use the same username as an existing unix user present in your machine; this will let you to access the PostgreSQL database shell without having to specify a user to login)
 - make them create databases by changing their role attributes `ALTER ROLE <user> CREATEDB;`
 - log out from psql with `\q` (switching to your default user and trying to connect results in a login error)
-- before connecting as a non-super user, create a db for your user, by simply doing `createdb <username>`; this will create a database for psql with the name of your username, psql needs this
+- before connecting as a non-super user, create a db for your user, by simply doing `createdb -E utf8 <username>`; this will create a database for psql with the name of your username, psql needs this
 - connect to psql again with your new user, by doing `psql -U <user> -h localhost`, type the password when asked; you should be in now!
 - create a new db with the logged in user (which is not root / superuser), `CREATE DATABASE <db-name>;`
 - grant access to your user `GRANT ALL PRIVILEGES ON DATABASE <db-name> TO <user>;`
@@ -155,7 +155,7 @@ CREATE TABLE tokens (
   word_freq word_freq[],
   three_word_freq json,
   two_word_freq json,
-  artid text
+  hash text
 );
 ```
 
@@ -171,6 +171,16 @@ CREATE TABLE feedback (
   score smallint NOT NULL,
   timestamp timestamptz
 );
+```
+
+finally, create `./db.ini` with the following info:
+
+```
+[postgresql]
+host=localhost
+database=<db-name>
+user=<db-user>
+password=<db-user-password>
 ```
 
 ## General usage
@@ -213,23 +223,23 @@ A general workflow would consist in:
 After these three operations have been done for each publisher, the program can be run. Eg, the article matching algorithm can be utilised by either using the frontend web application, or by sending a `POST` request in the form of:
 
 ``` shell
-curl -H "content-type: application/json" -d '{ "article_title": "The New Euro-Citizen", "article_publisher": "online-open", "article_id": 839, "tokens": { "title": true, "author": true, "tags": true, "body": true } }' http://127.0.0.1:5000/api/ask
+curl -H "content-type: application/json" -d '{ "article_slug": "the-new-euro-citizen", "article_publisher": "online-open", "tokens": { "title": true, "author": true, "tags": true, "body": true }, "size": 100 }' http://127.0.0.1:5000/api/ask
 ```
 
 To break the `curl` command down:
 
 - `-H "content-type: application/json"`, send a JSON Header
 - `-d '{
-    "article_title": "The New Euro-Citizen", 
+    "article_slug": "the-new-euro-citizen", 
     "article_publisher": "online-open", 
-    "article_id": 839, 
     "tokens": {
       "title": true,
       "author": true,
       "tags": true,
       "body": true
-      } 
-  }'` with a data object containing `article_title`, `article_id` and `tokens` type; the data for these three fields can be retrieved from the text-processed data saved in the database, as well as when running the server from the JSON Rest API, by browsing to a publisher page and pick an article from the (eg `http://127.0.0.1:5000/api/articles/amateur-cities`).
+      },
+    "size": 100
+  }'` with a data object containing `article_slug`, `article_publisher` and `tokens` type; the data for these three fields can be retrieved from the text-processed data saved in the database, as well as when running the server from the JSON Rest API, by browsing to a publisher page and pick an article from the (eg `http://127.0.0.1:5000/api/articles/amateur-cities`).
 
 This call will return an array list of articles, containing all the matches found by the suggestion algorithm.
 
